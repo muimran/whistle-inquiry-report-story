@@ -52,7 +52,14 @@
 
 	// Chart rows (px): deadline label, time band, months, years.
 	const PAD = 8;
-	const Y = { flag: 12, band: 24, bandH: 12, month: 54, year: 68, h: 72 };
+	// Narrow screens (phones): the dates are tick marks above the band instead of
+	// dots on it, so a busy week reads as a cluster rather than overlapping blobs.
+	const narrow = $derived(w < 500);
+	const Y = $derived(
+		narrow
+			? { flag: 12, band: 34, bandH: 10, month: 60, year: 74, h: 78 }
+			: { flag: 12, band: 24, bandH: 12, month: 54, year: 68, h: 72 }
+	);
 	const x = (t) => PAD + ((t - T0) / (T1 - T0)) * Math.max(0, w - 2 * PAD);
 
 	const step = $derived(steps[active]);
@@ -125,8 +132,12 @@
 			<!-- The cards below say all of this in words, so screen readers skip it. -->
 			<div class="stage" bind:this={stageEl} bind:clientHeight={stageH} aria-hidden="true">
 				<div class="ctr" class:off={before}>
-					<span class="ctr-line">
-						<span class="ctr-value">{before ? '—' : C.ui.days.value(bn(days))}</span>
+					<span class="ctr-figure">
+						<span class="ctr-num">{before ? '—' : bn(days)}</span>
+						<span class="ctr-unit">{C.ui.days.unit}</span>
+					</span>
+					<span class="ctr-text">
+						<span class="ctr-label">{C.ui.days.label}</span>
 						<span class="ctr-sub" class:red={over > 0}>
 							{before ? C.ui.days.before : over > 0 ? C.ui.pastDeadline(bn(over)) : ''}
 						</span>
@@ -153,7 +164,20 @@
 						{/each}
 
 						{#each dots as d, j (j)}
-							<circle class="mk" class:shown={d.step <= active} class:now={d.step === active} cx={x(d.t)} cy={Y.band + Y.bandH / 2} r={d.step === active ? 5.5 : 4} />
+							{#if narrow}
+								{@const now = d.step === active}
+								<rect
+									class="tick"
+									class:shown={d.step <= active}
+									class:now
+									x={x(d.t) - (now ? 1.5 : 1)}
+									y={Y.band - (now ? 15 : 11)}
+									width={now ? 3 : 2}
+									height={now ? 13 : 9}
+								/>
+							{:else}
+								<circle class="mk" class:shown={d.step <= active} class:now={d.step === active} cx={x(d.t)} cy={Y.band + Y.bandH / 2} r={d.step === active ? 5.5 : 4} />
+							{/if}
 						{/each}
 
 						{#if dlState !== 'announced'}
@@ -173,7 +197,7 @@
 			<div class="bigday" class:off={before} aria-hidden="true">
 				<span class="bd-label">{C.ui.days.label}</span>
 				<span class="bd-num">{before ? '—' : bn(days)}</span>
-				{#if !before}<span class="bd-unit">দিন</span>{/if}
+				{#if !before}<span class="bd-unit">{C.ui.days.unit}</span>{/if}
 				<span class="bd-sub" class:red={over > 0}>
 					{before ? C.ui.days.before : over > 0 ? C.ui.pastDeadline(bn(over)) : '\u00a0'}
 				</span>
@@ -241,25 +265,47 @@
 		border-bottom: 1px solid var(--wi-line);
 		box-shadow: 0 6px 12px -8px rgba(0, 0, 0, 0.18);
 	}
+	/* the day count in the bar (phones and tablets; desktop shows it beside the cards) */
 	.ctr {
 		display: flex;
-		flex-direction: column;
-		margin-bottom: 4px;
+		align-items: center;
+		gap: 14px;
+		margin-bottom: 6px;
 	}
-	.ctr-line {
-		display: flex;
+	.ctr-figure {
+		display: inline-flex;
 		align-items: baseline;
-		gap: 10px;
+		gap: 5px;
 		white-space: nowrap;
 	}
-	.ctr-value {
-		font-size: 24px;
-		line-height: 1.25;
+	.ctr-num {
+		font-family: var(--wi-serif);
 		font-weight: 700;
+		font-size: 52px;
+		line-height: 1;
 		color: var(--inq-dark);
+		font-variant-numeric: tabular-nums;
+	}
+	.ctr-unit {
+		font-family: var(--wi-serif);
+		font-weight: 700;
+		font-size: 20px;
+		color: var(--inq-dark);
+	}
+	.ctr-text {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		min-width: 0;
+	}
+	.ctr-label {
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--wi-muted);
 	}
 	.ctr-sub {
 		font-size: 13px;
+		line-height: 1.35;
 		font-weight: 500;
 		color: var(--wi-muted);
 	}
@@ -319,6 +365,18 @@
 	.mk.now {
 		fill: var(--inq-dark);
 		stroke: #fff;
+	}
+	/* narrow screens: tick marks above the band */
+	.tick {
+		fill: var(--inq-dark);
+		opacity: 0;
+		transition: opacity 0.35s ease;
+	}
+	.tick.shown {
+		opacity: 0.45;
+	}
+	.tick.now {
+		opacity: 1;
 	}
 	.dl-label {
 		font-size: 11.5px;
@@ -479,11 +537,15 @@
 		.stage {
 			padding-top: 22px;
 		}
-		.ctr-value {
-			font-size: 21px;
-		}
 		.ctr-sub {
-			font-size: 12px;
+			font-size: 12.5px;
+		}
+		/* shorter scroll: each card gets 60% of the screen instead of 78% */
+		.step {
+			min-height: 60vh;
+		}
+		.step:last-child {
+			min-height: 55vh;
 		}
 		.card {
 			padding: 14px;

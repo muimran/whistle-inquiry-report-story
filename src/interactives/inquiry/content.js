@@ -29,7 +29,7 @@ export const dates = {
 
 export const ui = {
 	// The counter above the chart
-	days: { label: 'তদন্তের সময়', value: (n) => `${n} দিন`, before: 'কমিটি গঠনের আগে' },
+	days: { label: 'তদন্তের সময়', unit: 'দিন', value: (n) => `${n} দিন`, before: 'কমিটি গঠনের আগে' },
 	pastDeadline: (n) => `মূল সময়সীমার পর ${n} দিন`,
 	// The label next to the red deadline line, as it stood at each step
 	deadline: {
