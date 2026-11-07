@@ -270,8 +270,10 @@
 	.ctr {
 		display: flex;
 		align-items: center;
-		gap: 14px;
-		margin-bottom: 6px;
+		justify-content: center;
+		gap: 12px;
+		/* clear space between the number and the chart under it */
+		margin-bottom: 16px;
 	}
 	.ctr-figure {
 		display: inline-flex;
@@ -282,15 +284,15 @@
 	.ctr-num {
 		font-family: var(--wi-serif);
 		font-weight: 700;
-		font-size: 52px;
-		line-height: 1;
+		font-size: 42px;
+		line-height: 1.1;
 		color: var(--inq-dark);
 		font-variant-numeric: tabular-nums;
 	}
 	.ctr-unit {
 		font-family: var(--wi-serif);
 		font-weight: 700;
-		font-size: 20px;
+		font-size: 18px;
 		color: var(--inq-dark);
 	}
 	.ctr-text {
