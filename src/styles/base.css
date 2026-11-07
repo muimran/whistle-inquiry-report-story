@@ -1,0 +1,196 @@
+/* Shared look for all interactives.
+   Everything is scoped under .wi so nothing leaks into the site's own page,
+   and the doubled .wi.wi selectors outrank the site's element rules
+   (e.g. "p { color:#6d6d6d }" or ".story-section p { font-size:22px }"). */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@400;500;600;700&display=swap');
+
+.wi {
+	/* The site's menu bar becomes fixed after scrolling: 58px tall below
+	   992px, 76px from 992px up. Keep sticky things and scroll targets below
+	   it (see the media query after this block). Embed pages set this lower. */
+	--wi-top-offset: var(--wi-sticky-top, 72px);
+	--wi-ink: #111111;
+	--wi-body: #1a1a1a;
+	--wi-muted: #5b6670;
+	--wi-line: #d5d8d7;
+	--wi-panel: #eef0ef; /* same grey as the site's investigation box */
+	--wi-card: #ffffff;
+	--wi-red: #d32f2f; /* the site's own red (#e53935), one step darker so small text stays readable */
+	--wi-red-soft: #fbe3e2;
+	--wi-blue: #3f6680;
+	--wi-blue-soft: #dce8f0;
+	--wi-serif: 'Noto Serif Bengali', serif;
+	--wi-sans: 'Noto Sans Bengali', 'Hind Siliguri', system-ui, sans-serif;
+
+	box-sizing: border-box;
+	font-family: var(--wi-sans);
+	font-size: 16px;
+	line-height: 1.6;
+	font-weight: 400;
+	color: var(--wi-body);
+	text-align: left;
+	-webkit-text-size-adjust: 100%;
+}
+
+@media (min-width: 992px) {
+	/* Desktop: the menu bar is 76px tall. */
+	.wi {
+		--wi-top-offset: var(--wi-sticky-top, 90px);
+	}
+}
+.wi *,
+.wi *::before,
+.wi *::after {
+	box-sizing: inherit;
+}
+.wi.wi :is(p, h1, h2, h3, h4, ul, ol, li, figure, blockquote, table) {
+	margin: 0;
+	padding: 0;
+	font-size: inherit;
+	line-height: inherit;
+	font-weight: inherit;
+	color: inherit;
+	font-family: inherit;
+	text-align: inherit;
+	letter-spacing: normal;
+}
+.wi.wi :is(ul, ol) {
+	list-style: none;
+}
+.wi.wi button {
+	font: inherit;
+	font-size: 14px;
+	line-height: 1.4;
+	color: var(--wi-ink);
+	background: var(--wi-card);
+	border: 1px solid var(--wi-line);
+	border-radius: 4px;
+	padding: 7px 12px;
+	cursor: pointer;
+	margin: 0;
+	text-transform: none;
+	box-shadow: none;
+}
+.wi.wi button:hover {
+	border-color: var(--wi-ink);
+}
+.wi.wi button:disabled {
+	opacity: 0.45;
+	cursor: default;
+	border-color: var(--wi-line);
+}
+.wi.wi button:focus-visible,
+.wi.wi input:focus-visible {
+	outline: 2px solid var(--wi-red);
+	outline-offset: 2px;
+}
+.wi.wi button.wi-primary {
+	background: var(--wi-ink);
+	color: #fff;
+	border-color: var(--wi-ink);
+}
+
+/* Shared header block used at the top of each interactive */
+.wi.wi .wi-kicker {
+	font-size: 13px;
+	letter-spacing: 0.04em;
+	color: var(--wi-red);
+	font-weight: 600;
+}
+.wi.wi .wi-title {
+	font-family: var(--wi-serif);
+	font-weight: 700;
+	font-size: clamp(24px, 4vw, 32px);
+	line-height: 1.3;
+	color: var(--wi-ink);
+	margin: 2px 0 8px;
+	text-wrap: balance;
+}
+.wi.wi .wi-lede {
+	color: var(--wi-muted);
+	max-width: 64ch;
+}
+.wi.wi .wi-note {
+	font-size: 13px;
+	line-height: 1.55;
+	color: var(--wi-muted);
+	max-width: 74ch;
+}
+
+/* The grey panel each interactive sits in on the article page */
+.wi.wi.wi-frame {
+	--wi-pad: clamp(12px, 3vw, 32px);
+	background: var(--wi-panel);
+	border: 1px solid var(--wi-line);
+	border-radius: 4px;
+	padding: 24px var(--wi-pad) 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wi *,
+	.wi *::before,
+	.wi *::after {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+/* Placeholder <div data-interactive="..."> in the article */
+.wi-embed {
+	margin: 40px auto 48px;
+	max-width: 1040px;
+}
+.wi-embed[data-interactive='verdicts'] {
+	max-width: 980px;
+}
+
+/* ---------- The site's menu bar (outside .wi on purpose) ----------
+   On the article page main.js puts .wi-menu-watch on <html>, and adds
+   .wi-menu-hidden from the moment an interactive's top edge touches the bottom
+   of the site's fixed menu (.homePage-menu.sticky) until the whole interactive
+   has left the screen. The menu folds away quickly and comes back slowly;
+   anything of ours that stays on screen moves up to the top meanwhile.
+   If the site renames these classes, the menu simply stays put. */
+html.wi-menu-watch .homePage-menu.sticky {
+	/* coming back: a slow slide down */
+	transition:
+		transform 0.5s ease,
+		opacity 0.5s ease,
+		visibility 0s;
+}
+html.wi-menu-hidden .homePage-menu.sticky {
+	transform: translateY(-100%);
+	opacity: 0;
+	visibility: hidden;
+	box-shadow: none;
+	animation: none;
+	/* going away: one quick, gentle fold */
+	transition:
+		transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+		opacity 0.35s ease,
+		visibility 0s linear 0.35s;
+}
+html.wi-menu-hidden {
+	--wi-sticky-top: 14px;
+}
+/* Over the hero image: no fixed menu at all. No transition on the way out, so
+   the menu doesn't flash when the site's script first fixes it to the top. */
+html.wi-menu-hero .homePage-menu.sticky {
+	transform: translateY(-100%);
+	opacity: 0;
+	visibility: hidden;
+	box-shadow: none;
+	transition: none;
+}
+/* the site's fadeInDown would restart every time .wi-menu-hidden comes off */
+html.wi-menu-tamed .homePage-menu.sticky {
+	animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	html.wi-menu-watch .homePage-menu.sticky {
+		transition: none;
+	}
+}

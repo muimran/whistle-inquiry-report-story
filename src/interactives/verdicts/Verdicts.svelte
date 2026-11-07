@@ -1,0 +1,671 @@
+<script>
+	// Four flip cards: allegation + reply on the front; the reader guesses,
+	// the card turns to the committee's verdict, reasoning and open question.
+	// Desktop: all four cards at once in a compact 2 × 2 grid that fits one
+	// screen; the section pins to the screen for a stretch of scrolling, on a
+	// band of its own colour, then lets go. Phones: one card at a time, swiped
+	// sideways, in the normal flow of the page.
+	import { tick } from 'svelte';
+	import { bn, prefersReducedMotion } from '../../lib/bn.js';
+	import * as C from './content.js';
+
+	let cards = $state(C.cases.map(() => ({ open: false, guess: null })));
+	const frontEls = [];
+	const backEls = [];
+	const caseEls = [];
+	let scroller;
+	let active = $state(0); // which card is in view on phones
+
+	const isCarousel = () => scroller && scroller.scrollWidth > scroller.clientWidth + 4;
+
+	function onScroll() {
+		const first = caseEls[0];
+		if (!isCarousel() || !first) return;
+		const gap = parseFloat(getComputedStyle(scroller).columnGap) || 0;
+		active = Math.max(0, Math.min(C.cases.length - 1, Math.round(scroller.scrollLeft / (first.offsetWidth + gap))));
+	}
+
+	// Bring card i into view: sideways on phones, up/down on desktop.
+	function showCase(i, focusFront = false) {
+		const el = caseEls[i];
+		if (!el) return;
+		const behavior = prefersReducedMotion() ? 'instant' : 'smooth';
+		if (isCarousel()) {
+			const pad = parseFloat(getComputedStyle(scroller).paddingLeft) || 0;
+			scroller.scrollTo({ left: el.offsetLeft - pad, behavior });
+			// If the reader had scrolled down into the card, bring its top back into view
+			// (after the sideways move, so the two animations don't interrupt each other).
+			const offset = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+			if (el.getBoundingClientRect().top < offset)
+				setTimeout(
+					() => window.scrollBy({ top: el.getBoundingClientRect().top - offset, behavior }),
+					behavior === 'smooth' ? 400 : 0
+				);
+		} else {
+			el.scrollIntoView({ behavior, block: 'nearest' });
+		}
+		if (focusFront) frontEls[i]?.querySelector('button')?.focus({ preventScroll: true });
+	}
+
+	const seen = $derived(cards.filter((s) => s.open).length);
+	const guessed = $derived(cards.filter((s) => s.open && s.guess).length);
+	const match = $derived(cards.filter((s, i) => s.open && s.guess && s.guess === C.cases[i].v).length);
+	const allOpen = $derived(seen === C.cases.length);
+
+	const tallyText = $derived.by(() => {
+		if (!seen) return C.ui.tallyNone;
+		if (!allOpen)
+			return C.ui.tallySome(bn(seen), bn(C.cases.length - seen)) + (guessed ? C.ui.tallySomeMatch(bn(match)) : '');
+		return C.ui.tallyAll + (guessed ? C.ui.tallyAllMatch(bn(guessed), bn(match)) : '');
+	});
+
+	async function setOpen(i, open, focus) {
+		cards[i].open = open;
+		if (focus) {
+			await tick();
+			(open ? backEls[i] : frontEls[i])?.querySelector('button')?.focus({ preventScroll: true });
+		}
+	}
+	function choose(i, guess) {
+		cards[i].guess = guess;
+		setOpen(i, true, true);
+	}
+	function toggleAll() {
+		const open = !allOpen;
+		cards.forEach((_, i) => setOpen(i, open, false));
+	}
+
+	// ---- Pinning (desktop) ----
+	// The band stays on screen while the reader scrolls HOLD % of a screen
+	// height, with a thin bar showing how far through that stretch they are.
+	// Only when the cards fit the screen height; never on phones or in an iframe.
+	const HOLD = 70;
+	const BAND_PAD = 20; // px above and below the cards on the band
+	const inFrame = typeof window !== 'undefined' && window.self !== window.top;
+	let trackEl = $state();
+	let frameEl = $state();
+	let pin = $state(false);
+	let progress = $state(0);
+
+	function onPageScroll() {
+		if (!pin || !trackEl) return;
+		const span = trackEl.offsetHeight - window.innerHeight;
+		progress = span > 0 ? Math.min(1, Math.max(0, -trackEl.getBoundingClientRect().top / span)) : 0;
+	}
+	function measure() {
+		if (!frameEl) return;
+		const desktop = matchMedia('(min-width: 641px)').matches;
+		pin = desktop && frameEl.offsetHeight + 2 * BAND_PAD <= window.innerHeight;
+		onPageScroll();
+	}
+	$effect(() => {
+		if (inFrame || !frameEl) return;
+		measure();
+		document.fonts?.ready.then(measure);
+		const ro = new ResizeObserver(measure);
+		ro.observe(frameEl);
+		window.addEventListener('resize', measure);
+		window.addEventListener('scroll', onPageScroll, { passive: true });
+		return () => {
+			ro.disconnect();
+			window.removeEventListener('resize', measure);
+			window.removeEventListener('scroll', onPageScroll);
+		};
+	});
+</script>
+
+<div class="wi vd-wrap" class:pin>
+	<div class="track" bind:this={trackEl} style:height={pin ? `calc(100vh + ${HOLD}vh)` : null}>
+	<div class="stage">
+	<div class="wi wi-frame vd" bind:this={frameEl}>
+	<header>
+		<div class="wi-kicker">{C.header.kicker}</div>
+		<h2 class="wi-title">{C.header.title}</h2>
+		<p class="wi-lede">{C.header.lede}</p>
+	</header>
+
+	<div class="tally" aria-live="polite">
+		<div class="pips">
+			{#each C.cases as c, i}
+				<button
+					type="button"
+					class="pipbtn"
+					class:here={i === active}
+					aria-label="{C.ui.allegation} {bn(c.n)}: {c.title}"
+					onclick={() => showCase(i)}><i class="pip {cards[i].open ? c.v : ''}"></i></button
+				>
+			{/each}
+		</div>
+		<div class="txt">{tallyText}</div>
+		<button type="button" onclick={toggleAll}>{allOpen ? C.ui.flipAll : C.ui.showAll}</button>
+	</div>
+
+	<section class="grid" bind:this={scroller} onscroll={onScroll}>
+		{#each C.cases as c, i (c.n)}
+			<article class="case" class:open={cards[i].open} bind:this={caseEls[i]}>
+				<div class="flipper">
+					<div class="face front" inert={cards[i].open} bind:this={frontEls[i]}>
+						<div class="body">
+							<p class="meta"><b>{C.ui.allegation} {bn(c.n)}</b> · {c.when}</p>
+							<h3>{c.title}</h3>
+							<p class="who">{c.who}</p>
+							<p class="voice her"><span class="tag">{C.ui.claimLabel}</span>{c.claim}</p>
+							<p class="voice him"><span class="tag">{C.ui.replyLabel}</span>{c.reply}</p>
+						</div>
+						<div class="ask">
+							<p>{C.ui.ask}</p>
+							<div class="seg" role="group" aria-label={C.ui.ask}>
+								<button type="button" class="vp" onclick={() => choose(i, 'p')}>{C.ui.proven}</button>
+								<button type="button" class="vn" onclick={() => choose(i, 'n')}>{C.ui.notProven}</button>
+							</div>
+							<button type="button" class="link" onclick={() => choose(i, null)}>{C.ui.justShow}</button>
+						</div>
+					</div>
+
+					<div class="face back" inert={!cards[i].open} bind:this={backEls[i]}>
+						<div class="verdict {c.v}">
+							<div class="vtext">
+								<span class="vlabel">{C.ui.verdictOf(bn(c.n))}</span>
+								<b>{c.stamp}</b>
+								<small>{c.sub}</small>
+							</div>
+							<button type="button" class="back-btn" aria-label={C.ui.back} onclick={() => setOpen(i, false, true)}
+								>{C.ui.backShort}</button
+							>
+						</div>
+						<div class="body">
+							{#if cards[i].guess}
+								<p class="yours">
+									{C.ui.yours}
+									<b>{cards[i].guess === 'p' ? C.ui.proven : C.ui.notProven}</b> ·
+									{cards[i].guess === c.v ? C.ui.matched : C.ui.notMatched}
+								</p>
+							{/if}
+							<ul class="why">
+								{#each c.why as w, k (k)}<li>{w}</li>{/each}
+							</ul>
+							<p class="quote">{c.quote}</p>
+							<p class="q"><span class="tag">{C.ui.openQuestion}</span>{c.open}</p>
+						</div>
+						{#if i < C.cases.length - 1}
+							<div class="foot">
+								<button type="button" class="wi-primary next" onclick={() => showCase(i + 1, true)}
+									>{C.ui.nextCase}</button
+								>
+							</div>
+						{/if}
+					</div>
+				</div>
+			</article>
+		{/each}
+	</section>
+	<p class="hint" class:gone={active > 0} aria-hidden="true">← {C.ui.swipeHint} →</p>
+	</div>
+	{#if pin}
+		<div class="progress" aria-hidden="true"><i style:transform="scaleX({progress})"></i></div>
+	{/if}
+	</div>
+	</div>
+
+	<p class="wi-note">{C.note}</p>
+</div>
+
+<style>
+	.vd-wrap {
+		--vd-band: #f1f1ec;
+	}
+	.vd-wrap > .wi-note {
+		margin-top: 14px;
+	}
+	/* Pinned (desktop): a full-width band that fills the screen and stays put */
+	.vd-wrap.pin .stage {
+		position: sticky;
+		top: 0;
+		height: 100vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100vw;
+		margin-left: calc(50% - 50vw);
+		padding: 20px 16px;
+		background: var(--vd-band);
+	}
+	.vd-wrap.pin .stage > .vd {
+		width: 100%;
+		max-width: 980px;
+	}
+	.progress {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 3px;
+		background: rgba(17, 17, 17, 0.08);
+	}
+	.progress i {
+		display: block;
+		height: 100%;
+		background: var(--wi-ink);
+		transform-origin: left center;
+	}
+	/* No grey panel, like the other two graphics, and tighter gaps. */
+	.wi.wi.wi-frame.vd {
+		--wi-pad: 0px;
+		background: transparent;
+		border: 0;
+		border-radius: 0;
+		padding: 0;
+		gap: 14px;
+	}
+	.tally {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px 18px;
+		background: var(--wi-card);
+		border: 1px solid var(--wi-line);
+		border-radius: 4px;
+		padding: 12px 16px;
+		font-size: 15px;
+	}
+	.pips {
+		display: flex;
+		gap: 6px;
+	}
+	.wi.wi .pipbtn {
+		padding: 8px 0;
+		border: 0;
+		border-radius: 2px;
+		background: none;
+		min-width: 0;
+		line-height: 0;
+	}
+	.pip {
+		display: block;
+		width: 30px;
+		height: 8px;
+		border-radius: 2px;
+		background: var(--wi-line);
+	}
+	.pip.p {
+		background: var(--wi-red);
+	}
+	.pip.n {
+		background: var(--wi-blue);
+	}
+	.tally .txt {
+		flex: 1 1 220px;
+		min-width: 0;
+	}
+
+	/* ---------- the cards ---------- */
+	/* desktop: 2 × 2, compact enough that the whole graphic fits one screen */
+	.grid {
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px;
+	}
+	.case {
+		perspective: 1600px;
+		scroll-margin-top: var(--wi-top-offset);
+	}
+	.next,
+	.hint,
+	.foot {
+		display: none;
+	}
+	.flipper {
+		display: grid;
+		height: 100%;
+		transition: transform 0.7s cubic-bezier(0.3, 0.7, 0.2, 1);
+		transform-style: preserve-3d;
+	}
+	.case.open .flipper {
+		transform: rotateY(180deg);
+	}
+	.face {
+		grid-area: 1 / 1;
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		overflow: hidden;
+		background: var(--wi-card);
+		border: 1px solid #e2e3df;
+		border-radius: 10px;
+		box-shadow:
+			0 1px 2px rgba(17, 17, 17, 0.04),
+			0 10px 20px -14px rgba(17, 17, 17, 0.22);
+	}
+	.back {
+		transform: rotateY(180deg);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.flipper,
+		.case.open .flipper,
+		.back {
+			transform: none;
+		}
+		.case .back,
+		.case.open .front {
+			visibility: hidden;
+		}
+		.case.open .back {
+			visibility: visible;
+		}
+	}
+	.body {
+		display: flex;
+		flex-direction: column;
+		gap: 7px;
+		padding: 14px 16px 12px;
+	}
+
+	/* front: who and what, then the two sides in their own words */
+	.wi.wi .meta {
+		font-size: 12px;
+		color: var(--wi-muted);
+	}
+	.wi.wi .meta b {
+		color: var(--wi-red);
+		font-weight: 700;
+	}
+	.wi.wi h3 {
+		font-family: var(--wi-serif);
+		font-weight: 700;
+		font-size: 19px;
+		line-height: 1.3;
+		color: var(--wi-ink);
+		text-wrap: balance;
+		margin-top: -2px;
+	}
+	.wi.wi .who {
+		font-size: 12.5px;
+		line-height: 1.45;
+		color: var(--wi-muted);
+		margin-bottom: 3px;
+	}
+	.wi.wi .voice {
+		font-family: var(--wi-serif);
+		font-size: 14px;
+		line-height: 1.55;
+		color: var(--wi-body);
+	}
+	.tag {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		margin-right: 6px;
+		font-family: var(--wi-sans);
+		font-size: 11.5px;
+		font-weight: 700;
+		vertical-align: 1px;
+	}
+	.tag::before {
+		content: '';
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: currentColor;
+	}
+	.her .tag {
+		color: var(--wi-red);
+	}
+	.him .tag {
+		color: var(--wi-muted);
+	}
+
+	/* the question along the bottom of the front */
+	.ask {
+		margin-top: auto;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 9px 16px;
+		background: #f7f7f4;
+		border-top: 1px solid #ecece7;
+	}
+	.wi.wi .ask p {
+		flex: 1 1 auto;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--wi-ink);
+	}
+	.seg {
+		flex: none;
+		display: inline-flex;
+		border: 1px solid var(--wi-line);
+		border-radius: 999px;
+		overflow: hidden;
+		background: var(--wi-card);
+	}
+	.wi.wi .seg button {
+		border: 0;
+		border-radius: 0;
+		background: none;
+		padding: 5px 13px;
+		font-size: 13px;
+		white-space: nowrap;
+	}
+	.wi.wi .seg button + button {
+		border-left: 1px solid var(--wi-line);
+	}
+	.wi.wi .seg .vp {
+		color: var(--wi-red);
+	}
+	.wi.wi .seg .vn {
+		color: var(--wi-blue);
+	}
+	.wi.wi .seg .vp:hover {
+		background: var(--wi-red-soft);
+	}
+	.wi.wi .seg .vn:hover {
+		background: var(--wi-blue-soft);
+	}
+	.wi.wi .link {
+		flex: none;
+		border: 0;
+		background: none;
+		padding: 5px 2px;
+		font-size: 12.5px;
+		color: var(--wi-muted);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+		white-space: nowrap;
+	}
+
+	/* back: the verdict across the top in its colour, then the reasons */
+	.verdict {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 10px;
+		padding: 11px 16px 10px;
+	}
+	.verdict.p {
+		background: var(--wi-red-soft);
+		color: var(--wi-red);
+	}
+	.verdict.n {
+		background: var(--wi-blue-soft);
+		color: var(--wi-blue);
+	}
+	.vtext {
+		min-width: 0;
+	}
+	.vlabel {
+		display: block;
+		font-size: 11.5px;
+		font-weight: 600;
+	}
+	.vtext b {
+		display: inline-block;
+		font-family: var(--wi-serif);
+		font-weight: 700;
+		font-size: 21px;
+		line-height: 1.25;
+		margin-right: 8px;
+	}
+	.vtext small {
+		font-size: 12px;
+	}
+	.case.open .vtext b {
+		animation: pop 0.45s 0.55s both;
+	}
+	@keyframes pop {
+		0% {
+			transform: scale(1.35);
+			opacity: 0;
+		}
+		70% {
+			transform: scale(0.97);
+			opacity: 1;
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
+	.wi.wi .back-btn {
+		flex: none;
+		padding: 4px 11px;
+		font-size: 12.5px;
+		border-radius: 999px;
+		border-color: currentColor;
+		background: rgba(255, 255, 255, 0.7);
+		color: inherit;
+	}
+	.wi.wi .yours {
+		font-size: 12.5px;
+		color: var(--wi-muted);
+	}
+	.wi.wi .yours b {
+		color: var(--wi-ink);
+	}
+	.wi.wi .why {
+		display: grid;
+		gap: 3px;
+		font-size: 13.5px;
+		line-height: 1.5;
+	}
+	.wi.wi .why li {
+		position: relative;
+		padding-left: 14px;
+	}
+	.wi.wi .why li::before {
+		content: '';
+		position: absolute;
+		left: 2px;
+		top: 0.68em;
+		width: 5px;
+		height: 5px;
+		border-radius: 50%;
+		background: var(--wi-muted);
+	}
+	.wi.wi .quote {
+		font-family: var(--wi-serif);
+		font-style: italic;
+		font-size: 13.5px;
+		line-height: 1.5;
+		color: var(--wi-ink);
+	}
+	.wi.wi .q {
+		font-size: 12.5px;
+		line-height: 1.5;
+		color: var(--wi-body);
+		padding-top: 7px;
+		border-top: 1px dashed var(--wi-line);
+	}
+	.q .tag {
+		color: #8a5a00;
+	}
+
+	/* Desktop: a little tighter so the whole graphic fits one screen */
+	@media (min-width: 641px) {
+		.wi.wi .wi-lede,
+		.wi.wi .wi-note {
+			max-width: none;
+		}
+		.tally {
+			padding: 8px 14px;
+		}
+		.wi.wi .wi-title {
+			font-size: 27px;
+			margin-bottom: 4px;
+		}
+	}
+
+	/* ---------- Phones: one card at a time, swipe sideways ---------- */
+	@media (max-width: 640px) {
+		.grid {
+			grid-template-columns: none;
+			grid-auto-flow: column;
+			grid-auto-columns: 87%;
+			align-items: start;
+			gap: 12px;
+			overflow-x: auto;
+			overscroll-behavior-x: contain;
+			scroll-snap-type: x mandatory;
+			scroll-padding-inline: var(--wi-pad);
+			margin-inline: calc(-1 * var(--wi-pad));
+			padding: 4px var(--wi-pad) 8px;
+			scrollbar-width: none;
+		}
+		.grid::-webkit-scrollbar {
+			display: none;
+		}
+		.case {
+			scroll-snap-align: start;
+		}
+		.wi.wi .pipbtn.here .pip {
+			box-shadow:
+				0 0 0 2px var(--wi-card),
+				0 0 0 3.5px var(--wi-ink);
+		}
+		/* narrow cards: the question on its own line above the buttons */
+		.ask {
+			flex-wrap: wrap;
+			row-gap: 6px;
+		}
+		.wi.wi .ask p {
+			flex-basis: 100%;
+		}
+		/* score bar: pips + "show all" on one line, the sentence under it */
+		.tally {
+			display: grid;
+			grid-template-columns: auto minmax(0, 1fr);
+			gap: 4px 12px;
+			padding: 8px 12px 10px;
+			font-size: 14px;
+		}
+		.tally .txt {
+			grid-column: 1 / -1;
+			grid-row: 2;
+		}
+		.wi.wi .tally > button {
+			justify-self: end;
+			padding: 5px 10px;
+			font-size: 13px;
+		}
+		.foot {
+			display: flex;
+			justify-content: flex-end;
+			padding: 0 16px 14px;
+		}
+		.next {
+			display: inline-block;
+		}
+		.wi.wi .hint {
+			display: block;
+			text-align: center;
+			font-size: 13px;
+			color: var(--wi-muted);
+			margin-top: -12px;
+			transition: opacity 0.3s;
+		}
+		.wi.wi .hint.gone {
+			opacity: 0;
+		}
+	}
+</style>
