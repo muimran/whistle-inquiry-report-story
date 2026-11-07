@@ -124,7 +124,7 @@
 		{#if !inFrame}
 			<!-- The cards below say all of this in words, so screen readers skip it. -->
 			<div class="stage" bind:this={stageEl} bind:clientHeight={stageH} aria-hidden="true">
-				<div class="ctr">
+				<div class="ctr" class:off={before}>
 					<span class="ctr-line">
 						<span class="ctr-value">{before ? '—' : C.ui.days.value(bn(days))}</span>
 						<span class="ctr-sub" class:red={over > 0}>
@@ -170,7 +170,7 @@
 		<div class="cols" style:--stage-h="{stageH}px">
 		{#if !inFrame}
 			<!-- Desktop: the day count, large, beside the cards. Screen readers skip it. -->
-			<div class="bigday" aria-hidden="true">
+			<div class="bigday" class:off={before} aria-hidden="true">
 				<span class="bd-label">{C.ui.days.label}</span>
 				<span class="bd-num">{before ? '—' : bn(days)}</span>
 				{#if !before}<span class="bd-unit">দিন</span>{/if}
@@ -331,6 +331,16 @@
 	.bigday {
 		display: none;
 	}
+	/* before the committee exists (first card) there is no count yet: it fades
+	   in at day 0. It keeps its space, so nothing moves when it appears. */
+	.bigday,
+	.ctr {
+		transition: opacity 0.35s ease;
+	}
+	.bigday.off,
+	.ctr.off {
+		opacity: 0;
+	}
 	@media (min-width: 900px) {
 		.cols {
 			display: grid;
@@ -345,7 +355,9 @@
 			display: flex;
 			flex-direction: column;
 			position: sticky;
-			top: calc(var(--wi-top-offset) - 14px + var(--stage-h) + 28px);
+			/* centred in the space between the chart and the bottom of the screen,
+			   level with the card being read (the block is about 210px tall) */
+			top: calc((var(--wi-top-offset) - 14px + var(--stage-h) + 100vh) / 2 - 105px);
 			padding-top: 18px;
 			transition: top 0.35s ease;
 		}
