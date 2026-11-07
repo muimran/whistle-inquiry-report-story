@@ -3,9 +3,11 @@
 	// in full, and scrolling past a stop fills its row in an office "note-sheet"
 	// and updates the count of steps with no written record.
 	//   Desktop: stops on the left, the note-sheet stays on screen on the right.
-	//   Phones:  the finished note-sheet on one screen; its rows fill in one by
-	//            one the first time it comes into view, and tapping a row opens
-	//            that step's full text on top (with previous / next).
+	//   Phones:  only the note-sheet. It pins to the screen for a stretch of
+	//            scrolling and its rows fill in one by one as the reader scrolls
+	//            (on screens too short to pin it, they fill in on a timer the first
+	//            time it comes into view). Tapping a row opens that step's full
+	//            text on top (with previous / next).
 	//   Inside an iframe (nothing can stay on screen): everything shown filled in.
 	import { untrack, tick } from 'svelte';
 	import { bn, prefersReducedMotion } from '../../lib/bn.js';
@@ -22,7 +24,16 @@
 	let revealed = $state(inFrame ? TOTAL : 0); // phones: rows filled in so far
 	let open = $state(-1); // phones: the step open on top
 	let sheetEl = $state();
+	let holdEl = $state();
 	let closeBtn = $state();
+	// phones: pin the sheet while the reader scrolls one extra screen height
+	const HOLD = 1.0; // extra scrolling, in screen heights
+	const FILL_BY = 0.8; // all rows are filled 80% of the way through
+	let pinPhone = $state(false);
+	let sheetH = $state(0);
+	let viewH = $state(0);
+	let pinTop = $state(0); // set on load / resize only, so the sheet never shifts while pinned
+	let lastW = 0;
 	const stopEls = [];
 	const rowEls = [];
 
@@ -38,9 +49,51 @@
 		return () => mq.removeEventListener('change', on);
 	});
 
-	// Phones: the first time the sheet comes into view, its rows fill in one by one.
+	// Phones: pin the sheet when it fits the screen; scrolling fills its rows.
+	function pinScroll() {
+		if (!pinPhone || !holdEl) return;
+		const span = holdEl.offsetHeight - sheetH;
+		const p = span > 0 ? Math.min(1, Math.max(0, (pinTop - holdEl.getBoundingClientRect().top) / span)) : 1;
+		const n = Math.min(TOTAL, Math.ceil((p / FILL_BY) * TOTAL - 0.001));
+		if (n !== revealed) {
+			fresh = n > revealed ? n - 1 : -1;
+			revealed = n;
+		}
+	}
+	// `full`: also re-centre the sheet (load, fonts, resize). The sheet grows a
+	// line once its total label changes, so ordinary re-measures leave it be.
+	function pinMeasure(full = true) {
+		if (!sheetEl) return;
+		const w = sheetEl.offsetWidth;
+		const h = sheetEl.offsetHeight;
+		viewH = window.innerHeight;
+		sheetH = w === lastW ? Math.max(sheetH, h) : h;
+		if (full || w !== lastW) pinTop = Math.max(14, Math.round((viewH - sheetH - 24) / 2));
+		lastW = w;
+		pinPhone = phone && !prefersReducedMotion() && pinTop + sheetH + 14 <= viewH;
+		pinScroll();
+	}
 	$effect(() => {
-		if (inFrame || !phone || !sheetEl || untrack(() => revealed) >= TOTAL) return;
+		phone; // re-measure when crossing the phone width
+		if (inFrame || !sheetEl) return;
+		untrack(() => pinMeasure());
+		document.fonts?.ready.then(() => pinMeasure());
+		const ro = new ResizeObserver(() => requestAnimationFrame(() => untrack(() => pinMeasure(false))));
+		ro.observe(sheetEl);
+		const onResize = () => pinMeasure();
+		window.addEventListener('resize', onResize);
+		window.addEventListener('scroll', pinScroll, { passive: true });
+		return () => {
+			ro.disconnect();
+			window.removeEventListener('resize', onResize);
+			window.removeEventListener('scroll', pinScroll);
+		};
+	});
+
+	// Phones, when the sheet can't pin: the first time it comes into view, its
+	// rows fill in one by one.
+	$effect(() => {
+		if (inFrame || !phone || pinPhone || !sheetEl || untrack(() => revealed) >= TOTAL) return;
 		let timer;
 		const io = new IntersectionObserver(
 			(entries) => {
@@ -180,7 +233,18 @@
 			</ol>
 		</section>
 
-		<aside class="sheet" aria-label={C.ui.sheetTitle} bind:this={sheetEl}>
+		<div
+			class="sheet-hold"
+			class:pinned={pinPhone}
+			bind:this={holdEl}
+			style:height={pinPhone ? `${Math.round(sheetH + viewH * HOLD)}px` : null}
+		>
+		<aside
+			class="sheet"
+			aria-label={C.ui.sheetTitle}
+			bind:this={sheetEl}
+			style:top={pinPhone ? `${pinTop}px` : null}
+		>
 			<h3>{C.ui.sheetTitle}</h3>
 			<div class="sub">{C.ui.sheetSub}</div>
 			<div class="tablewrap">
@@ -216,6 +280,7 @@
 			</div>
 			<p class="taphint">{C.ui.tapHint}</p>
 		</aside>
+		</div>
 	</div>
 
 	<!-- Phones: one step open on top of the sheet -->
@@ -276,8 +341,9 @@
 		gap: 28px;
 		align-items: start;
 	}
-	.layout > .sheet {
+	.layout > .sheet-hold {
 		order: -1;
+		align-self: stretch; /* full row height, so the sheet can stay on screen */
 	}
 
 	.wi.wi .track {
@@ -592,9 +658,15 @@
 		.layout {
 			grid-template-columns: 1fr;
 		}
-		.layout > .sheet {
+		.layout > .sheet-hold {
 			order: 0;
+		}
+		.sheet-hold:not(.pinned) > .sheet {
 			position: static;
+		}
+		/* pinned: the sheet stays in the middle of the screen (top set inline) */
+		.sheet-hold.pinned > .sheet {
+			transition: none;
 		}
 		.desk {
 			display: none;
