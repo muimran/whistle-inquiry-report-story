@@ -22,11 +22,11 @@ All its words, dates and sources are in `src/interactives/inquiry/content.js`, o
 
 ## Versions and viewing
 
-The project lives in a private GitHub repo, so every change is kept as a version.
+The project lives in a public GitHub repo: https://github.com/muimran/whistle-inquiry-report-story. Every change is kept as a version.
 
 - **To view the page without installing anything:** download the repo (Code → Download ZIP), unzip it and open `dist/index.html` in a browser.
 - **`dist/` is committed on purpose,** so the built page is always there to look at or hand over. After changing anything, run `npm run build` before committing, so `dist/` matches the source.
-- **To share it:** the repo is private. Invite people under Settings → Collaborators. Don't turn on GitHub Pages or make the repo public before the story is published, because that would put the unpublished story online.
+- **To share it:** send the repo link.
 
 ## Run it
 
