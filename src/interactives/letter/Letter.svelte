@@ -597,11 +597,9 @@
 		td {
 			padding: 4px 5px;
 		}
-		.total {
-			padding-top: 6px;
-		}
-		.wi.wi .total b {
-			font-size: 24px;
+		/* phones: no running total under the sheet */
+		.wi.wi .total {
+			display: none;
 		}
 		/* phones: the finished sheet only; each row opens its step on top */
 		.steps-col {
