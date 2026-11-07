@@ -15,7 +15,6 @@ export const ui = {
 	ask: 'আপনি হলে কী রায় দিতেন?',
 	proven: 'প্রমাণিত',
 	notProven: 'প্রমাণিত নয়',
-	justShow: 'শুধু রায় দেখুন',
 	back: '← অভিযোগে ফিরুন',
 	backShort: '← ফিরুন', // phones
 	nextCase: 'পরের অভিযোগ →', // phones: on the open card

@@ -167,7 +167,6 @@
 						</div>
 						<div class="ask">
 							<p>{C.ui.ask}</p>
-							<button type="button" class="link" onclick={() => choose(i, null)}>{C.ui.justShow}</button>
 							<div class="seg" role="group" aria-label={C.ui.ask}>
 								<button type="button" class="vp" onclick={() => choose(i, 'p')}>{C.ui.proven}</button>
 								<button type="button" class="vn" onclick={() => choose(i, 'n')}>{C.ui.notProven}</button>
