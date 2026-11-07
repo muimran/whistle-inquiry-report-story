@@ -203,8 +203,8 @@
 		<h2 class="wi-title">{C.header.title}</h2>
 		<p class="wi-lede">
 			{C.header.lede}
-			{#if !inFrame}
-				<span class="how"><span class="desk">{C.header.howTo}</span><span class="phone">{C.header.howToPhone}</span></span>
+			{#if !inFrame && phone}
+				<span class="how">{C.header.howToPhone}</span>
 			{/if}
 		</p>
 	</header>
@@ -364,7 +364,6 @@
 		/* a sheet row scrolls its step to just above the reading line (45%) */
 		scroll-margin-top: 30vh;
 	}
-	.phone,
 	.ledger,
 	.tally,
 	.go,
@@ -667,12 +666,6 @@
 		/* pinned: the sheet stays in the middle of the screen (top set inline) */
 		.sheet-hold.pinned > .sheet {
 			transition: none;
-		}
-		.desk {
-			display: none;
-		}
-		.phone {
-			display: inline;
 		}
 
 		/* the running count at the top of the screen */
