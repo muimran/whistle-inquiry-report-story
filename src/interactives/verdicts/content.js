@@ -18,7 +18,9 @@ export const ui = {
 	justShow: 'শুধু রায় দেখুন',
 	back: '← অভিযোগে ফিরুন',
 	backShort: '← ফিরুন', // phones
-	nextCase: 'পরের অভিযোগ →', // phones: one card at a time
+	nextCase: 'পরের অভিযোগ →', // phones: on the open card
+	tileOpen: 'পড়ুন, রায় দিন →', // phones: on each small card
+	close: 'বন্ধ করুন',
 	swipeHint: 'পাশে সরিয়ে পরের অভিযোগ দেখুন',
 	openQuestion: 'যে প্রশ্ন থেকে গেল',
 	yours: 'আপনার রায়:',

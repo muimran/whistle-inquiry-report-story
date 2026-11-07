@@ -14,38 +14,31 @@
 	const frontEls = [];
 	const backEls = [];
 	const caseEls = [];
-	let scroller;
-	let active = $state(0); // which card is in view on phones
+	const tileEls = [];
+	let active = $state(0); // the card last opened (outlined in the score bar on phones)
+	let sheet = $state(-1); // phones: the card open on top of the four small ones
+	const PHONE = typeof matchMedia !== 'undefined' ? matchMedia('(max-width: 640px)') : { matches: false };
 
-	const isCarousel = () => scroller && scroller.scrollWidth > scroller.clientWidth + 4;
-
-	function onScroll() {
-		const first = caseEls[0];
-		if (!isCarousel() || !first) return;
-		const gap = parseFloat(getComputedStyle(scroller).columnGap) || 0;
-		active = Math.max(0, Math.min(C.cases.length - 1, Math.round(scroller.scrollLeft / (first.offsetWidth + gap))));
-	}
-
-	// Bring card i into view: sideways on phones, up/down on desktop.
-	function showCase(i, focusFront = false) {
-		const el = caseEls[i];
-		if (!el) return;
-		const behavior = prefersReducedMotion() ? 'instant' : 'smooth';
-		if (isCarousel()) {
-			const pad = parseFloat(getComputedStyle(scroller).paddingLeft) || 0;
-			scroller.scrollTo({ left: el.offsetLeft - pad, behavior });
-			// If the reader had scrolled down into the card, bring its top back into view
-			// (after the sideways move, so the two animations don't interrupt each other).
-			const offset = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
-			if (el.getBoundingClientRect().top < offset)
-				setTimeout(
-					() => window.scrollBy({ top: el.getBoundingClientRect().top - offset, behavior }),
-					behavior === 'smooth' ? 400 : 0
-				);
-		} else {
-			el.scrollIntoView({ behavior, block: 'nearest' });
+	// Phones: open card i on top. Desktop: bring it into view.
+	async function showCase(i, focusFront = false) {
+		if (i < 0 || i >= C.cases.length) return;
+		active = i;
+		if (PHONE.matches) {
+			sheet = i;
+			await tick();
+			frontEls[i]?.querySelector('.seg button')?.focus({ preventScroll: true });
+			return;
 		}
+		caseEls[i]?.scrollIntoView({ behavior: prefersReducedMotion() ? 'instant' : 'smooth', block: 'nearest' });
 		if (focusFront) frontEls[i]?.querySelector('.seg button')?.focus({ preventScroll: true });
+	}
+	function closeSheet() {
+		const i = sheet;
+		sheet = -1;
+		tileEls[i]?.focus({ preventScroll: true });
+	}
+	function onKey(e) {
+		if (e.key === 'Escape' && sheet >= 0) closeSheet();
 	}
 
 	const seen = $derived(cards.filter((s) => s.open).length);
@@ -95,8 +88,7 @@
 	}
 	function measure() {
 		if (!frameEl) return;
-		const desktop = matchMedia('(min-width: 641px)').matches;
-		pin = desktop && frameEl.offsetHeight + 2 * BAND_PAD <= window.innerHeight;
+		pin = frameEl.offsetHeight + 2 * BAND_PAD <= window.innerHeight;
 		onPageScroll();
 	}
 	$effect(() => {
@@ -115,6 +107,8 @@
 		};
 	});
 </script>
+
+<svelte:window onkeydown={onKey} />
 
 <div class="wi vd-wrap" class:pin>
 	<div class="track" bind:this={trackEl} style:height={pin ? `calc(100vh + ${HOLD}vh)` : null}>
@@ -142,9 +136,26 @@
 		<button type="button" onclick={toggleAll}>{allOpen ? C.ui.flipAll : C.ui.showAll}</button>
 	</div>
 
-	<section class="grid" bind:this={scroller} onscroll={onScroll}>
+	<!-- Phones: the four allegations as small cards; tapping one opens it on top -->
+	<div class="tiles">
 		{#each C.cases as c, i (c.n)}
-			<article class="case" class:open={cards[i].open} bind:this={caseEls[i]}>
+			<button type="button" class="tile" bind:this={tileEls[i]} onclick={() => showCase(i)}>
+				<span class="t-num">{C.ui.allegation} {bn(c.n)}</span>
+				<span class="t-title">{c.title}</span>
+				{#if cards[i].open}
+					<span class="t-verdict {c.v}">{c.stamp}</span>
+				{:else}
+					<span class="t-open">{C.ui.tileOpen}</span>
+				{/if}
+			</button>
+		{/each}
+	</div>
+
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+	<section class="grid" class:sheet={sheet >= 0} onclick={(e) => e.target === e.currentTarget && closeSheet()}>
+		<button type="button" class="sheet-close" onclick={closeSheet}>✕ {C.ui.close}</button>
+		{#each C.cases as c, i (c.n)}
+			<article class="case" class:open={cards[i].open} class:current={i === sheet} bind:this={caseEls[i]}>
 				<div class="flipper">
 					<div class="face front" inert={cards[i].open} bind:this={frontEls[i]}>
 						<div class="body">
@@ -200,7 +211,6 @@
 			</article>
 		{/each}
 	</section>
-	<p class="hint" class:gone={active > 0} aria-hidden="true">← {C.ui.swipeHint} →</p>
 	</div>
 	{#if pin}
 		<div class="progress" aria-hidden="true"><i style:transform="scaleX({progress})"></i></div>
@@ -318,7 +328,8 @@
 		scroll-margin-top: var(--wi-top-offset);
 	}
 	.next,
-	.hint {
+	.tiles,
+	.sheet-close {
 		display: none;
 	}
 	.flipper {
@@ -628,27 +639,95 @@
 		}
 	}
 
-	/* ---------- Phones: one card at a time, swipe sideways ---------- */
+	/* ---------- Phones: four small cards on one screen; tap to open one ---------- */
 	@media (max-width: 640px) {
-		.grid {
-			grid-template-columns: none;
-			grid-auto-flow: column;
-			grid-auto-columns: 87%;
-			align-items: start;
-			gap: 12px;
-			overflow-x: auto;
-			overscroll-behavior-x: contain;
-			scroll-snap-type: x mandatory;
-			scroll-padding-inline: var(--wi-pad);
-			margin-inline: calc(-1 * var(--wi-pad));
-			padding: 4px var(--wi-pad) 8px;
-			scrollbar-width: none;
+		.tiles {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px;
 		}
-		.grid::-webkit-scrollbar {
+		.wi.wi .tile {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 6px;
+			min-height: 128px;
+			padding: 12px;
+			text-align: left;
+			background: var(--wi-card);
+			border: 1px solid var(--vd-line);
+			border-radius: 10px;
+			box-shadow: 0 6px 14px -12px rgba(17, 17, 17, 0.3);
+		}
+		.t-num {
+			font-size: 11.5px;
+			font-weight: 700;
+			color: var(--wi-red);
+		}
+		.t-title {
+			font-family: var(--wi-serif);
+			font-size: 15px;
+			font-weight: 700;
+			line-height: 1.35;
+			color: var(--vd-ink);
+		}
+		.t-open {
+			margin-top: auto;
+			font-size: 12px;
+			color: var(--vd-grey);
+		}
+		.t-verdict {
+			margin-top: auto;
+			padding: 2px 10px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+		}
+		.t-verdict.p {
+			background: var(--wi-red-soft);
+			color: var(--wi-red);
+		}
+		.t-verdict.n {
+			background: var(--vd-wash);
+			color: var(--vd-ink);
+		}
+
+		/* the full card, open on top of everything */
+		.grid {
 			display: none;
 		}
-		.case {
-			scroll-snap-align: start;
+		.grid.sheet {
+			display: flex;
+			position: fixed;
+			inset: 0;
+			z-index: 10000001;
+			align-items: center;
+			justify-content: center;
+			padding: 60px 14px 24px;
+			overflow-y: auto;
+			overscroll-behavior: contain;
+			background: rgba(17, 17, 17, 0.55);
+		}
+		.grid.sheet .case {
+			display: none;
+			width: 100%;
+			max-width: 440px;
+			margin: auto 0;
+		}
+		.grid.sheet .case.current {
+			display: block;
+		}
+		.wi.wi .grid.sheet .sheet-close {
+			display: block;
+			position: fixed;
+			top: 14px;
+			right: 14px;
+			padding: 6px 14px;
+			border-radius: 999px;
+			border: 0;
+			background: var(--wi-card);
+			font-size: 13px;
+			color: var(--vd-ink);
 		}
 		.wi.wi .pipbtn.here .pip {
 			box-shadow:
@@ -689,17 +768,6 @@
 		}
 		.next {
 			display: inline-block;
-		}
-		.wi.wi .hint {
-			display: block;
-			text-align: center;
-			font-size: 13px;
-			color: var(--wi-muted);
-			margin-top: -12px;
-			transition: opacity 0.3s;
-		}
-		.wi.wi .hint.gone {
-			opacity: 0;
 		}
 	}
 </style>
