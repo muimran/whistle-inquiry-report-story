@@ -8,8 +8,6 @@ import Inquiry from './interactives/inquiry/Inquiry.svelte';
 import Verdicts from './interactives/verdicts/Verdicts.svelte';
 import Letter from './interactives/letter/Letter.svelte';
 
-// The earlier 83-day timeline (src/interactives/timeline/) is no longer used:
-// the inquiry scrolly replaced it. It isn't imported, so it isn't in the build.
 const REGISTRY = {
 	inquiry: Inquiry,
 	verdicts: Verdicts,

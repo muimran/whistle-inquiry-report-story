@@ -12,7 +12,6 @@ It's a plain HTML article with three interactives built in Svelte.
 | Standalone page for each interactive (for iframes) | `embed/*.html` |
 | Source draft | `The_Whistle_tadanta-protibedon_v3-edited.docx` |
 | Text for the scrolly | `interactive timeline.docx` |
-| Earlier 83-day timeline (replaced by the scrolly, no longer built) | `src/interactives/timeline/` |
 
 ## The scrolly
 

@@ -80,7 +80,7 @@ console.log(`Applied ${bodyChanges} body text change(s) to index.html`);
 
 // ── 2. Apply interactive text to content.js files ─────────────────────────────
 
-for (const name of ['inquiry', 'letter', 'timeline', 'verdicts']) {
+for (const name of ['inquiry', 'letter', 'verdicts']) {
   const data = content.interactives[name];
   if (!data) continue;
 

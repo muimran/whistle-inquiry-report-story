@@ -93,7 +93,7 @@ function extractInteractive(name) {
 }
 
 const interactives = {};
-for (const name of ['inquiry', 'letter', 'timeline', 'verdicts']) {
+for (const name of ['inquiry', 'letter', 'verdicts']) {
   const { src, path } = extractInteractive(name);
   // We store the raw JS source. The editor will parse exported values.
   // For round-tripping, we store the content as structured data.
@@ -122,7 +122,7 @@ async function loadContentModule(name) {
 async function main() {
   const content = { body: bodyBlocks, interactives: {} };
 
-  for (const name of ['inquiry', 'letter', 'timeline', 'verdicts']) {
+  for (const name of ['inquiry', 'letter', 'verdicts']) {
     const mod = await loadContentModule(name);
     const data = {};
     for (const [key, value] of Object.entries(mod)) {
@@ -134,7 +134,7 @@ async function main() {
   }
 
   writeFileSync(join(__dirname, 'content.json'), JSON.stringify(content, null, 2), 'utf8');
-  console.log(`Extracted ${bodyBlocks.length} body blocks and 4 interactives → editor/content.json`);
+  console.log(`Extracted ${bodyBlocks.length} body blocks and ${Object.keys(content.interactives).length} interactives → editor/content.json`);
 }
 
 // Recursively serialize, turning functions into their source strings
