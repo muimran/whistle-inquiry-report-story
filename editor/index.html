@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>সম্পাদনা — দ্য হুইসেল</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;700&display=swap">
+<style>
+:root {
+  --bg: #faf9f6;
+  --text: #1a1a1a;
+  --muted: #666;
+  --accent: #b91c1c;
+  --edit-bg: #fffde7;
+  --edit-border: #f59e0b;
+  --changed-bg: #fef3c7;
+  --section-bg: #f3f4f6;
+  --interactive-bg: #eff6ff;
+  --interactive-border: #3b82f6;
+  --save-bg: #16a34a;
+  --save-hover: #15803d;
+  --font: 'Noto Serif Bengali', serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.8;
+  padding-bottom: 100px;
+}
+
+/* ── Top bar ────────────────────────────────────────────────────────────────── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.topbar h1 { font-size: 16px; font-weight: 700; }
+.topbar .status { font-size: 13px; color: var(--muted); flex: 1; }
+.topbar .changes-count {
+  background: var(--changed-bg);
+  color: #92400e;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.btn-save {
+  background: var(--save-bg);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: var(--font);
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-save:hover { background: var(--save-hover); }
+.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Setup screen ───────────────────────────────────────────────────────────── */
+.setup {
+  max-width: 500px;
+  margin: 80px auto;
+  padding: 30px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.setup h2 { font-size: 20px; margin-bottom: 16px; }
+.setup p { font-size: 14px; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+.setup label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.setup input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: monospace;
+  margin-bottom: 16px;
+}
+.setup button {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-family: var(--font);
+  cursor: pointer;
+  font-weight: 600;
+}
+.setup .error { color: var(--accent); font-size: 13px; margin-top: 8px; }
+
+/* ── Article layout ─────────────────────────────────────────────────────────── */
+.article { max-width: 720px; margin: 30px auto; padding: 0 20px; }
+
+.article .hero { margin-bottom: 40px; text-align: center; }
+.article .hero h2 { font-size: 18px; color: var(--accent); margin-bottom: 8px; }
+.article .hero h3 { font-size: 28px; line-height: 1.4; margin-bottom: 16px; }
+.article .hero .lede { font-size: 17px; color: #333; margin-bottom: 12px; text-align: right; }
+.article .hero .credits { font-size: 14px; color: var(--muted); text-align: right; }
+.article .hero .credits p { margin-bottom: 2px; }
+
+.section-divider {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 20px 0;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 30px;
+}
+
+.article h2.section-heading {
+  font-size: 22px;
+  margin: 30px 0 12px;
+  color: var(--accent);
+}
+
+.article p {
+  font-size: 17px;
+  margin-bottom: 14px;
+  text-align: justify;
+}
+
+/* ── Interactive sections ───────────────────────────────────────────────────── */
+.interactive-section {
+  background: var(--interactive-bg);
+  border-left: 4px solid var(--interactive-border);
+  padding: 20px;
+  margin: 30px 0;
+  border-radius: 0 8px 8px 0;
+}
+.interactive-section h3 {
+  font-size: 16px;
+  color: var(--interactive-border);
+  margin-bottom: 12px;
+}
+.interactive-section .field {
+  margin-bottom: 12px;
+}
+.interactive-section .field-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+.interactive-section .field-group {
+  background: #fff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border: 1px solid #e5e7eb;
+}
+.interactive-section .field-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--interactive-border);
+  margin-bottom: 8px;
+}
+
+/* ── Editable blocks ────────────────────────────────────────────────────────── */
+[data-editable] {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s, box-shadow 0.15s;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+[data-editable]:hover {
+  background: var(--edit-bg);
+  box-shadow: 0 0 0 2px var(--edit-border);
+}
+[data-editable].editing {
+  background: var(--edit-bg);
+  box-shadow: 0 0 0 2px var(--edit-border);
+  outline: none;
+}
+[data-editable].changed {
+  background: var(--changed-bg);
+}
+
+/* ── Toast ──────────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* ── Loading ────────────────────────────────────────────────────────────────── */
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-size: 16px;
+}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const REPO_OWNER = 'muimran';
+const REPO_NAME = 'whistle-inquiry-report-story';
+const FILE_PATH = 'editor/content.json';
+const BRANCH = 'main';
+
+let token = localStorage.getItem('gh_token') || '';
+let content = null;       // the live content.json
+let originalContent = ''; // stringified original for diffing
+let changeCount = 0;
+
+const app = document.getElementById('app');
+
+// ── Entry point ─────────────────────────────────────────────────────────────
+// Local dev mode: if served from localhost with content.json next to it, skip GitHub
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+if (isLocal) {
+  showLoading();
+  loadContentLocal();
+} else if (token) {
+  showLoading();
+  loadContent();
+} else {
+  showSetup();
+}
+
+// ── Setup screen ────────────────────────────────────────────────────────────
+function showSetup() {
+  app.innerHTML = `
+    <div class="setup">
+      <h2>সম্পাদনা শুরু করুন</h2>
+      <p>এই পেজে গল্পের সব লেখা দেখতে ও সম্পাদনা করতে পারবেন। সেভ করলে সরাসরি GitHub-এ যাবে।</p>
+      <p>শুরু করতে আপনার GitHub Personal Access Token দিন। টোকেন শুধু এই ব্রাউজারে থাকবে।</p>
+      <label>GitHub Token</label>
+      <input type="password" id="token-input" placeholder="ghp_xxxx...">
+      <button onclick="handleLogin()">শুরু করুন</button>
+      <div class="error" id="setup-error"></div>
+    </div>
+  `;
+}
+
+async function handleLogin() {
+  const input = document.getElementById('token-input');
+  const err = document.getElementById('setup-error');
+  const t = input.value.trim();
+  if (!t) { err.textContent = 'টোকেন দিন'; return; }
+
+  err.textContent = 'যাচাই করা হচ্ছে...';
+  try {
+    const res = await ghFetch('', t);
+    if (!res.ok) throw new Error('Invalid token or no access');
+    token = t;
+    localStorage.setItem('gh_token', t);
+    showLoading();
+    loadContent();
+  } catch (e) {
+    err.textContent = 'টোকেন কাজ করেনি। সঠিক টোকেন দিন।';
+  }
+}
+
+// ── Load content ────────────────────────────────────────────────────────────
+function showLoading() {
+  app.innerHTML = '<div class="loading">লোড হচ্ছে...</div>';
+}
+
+async function loadContentLocal() {
+  try {
+    const res = await fetch('./content.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    content = JSON.parse(text);
+    originalContent = text;
+    renderEditor();
+  } catch (e) {
+    app.innerHTML = `<div class="setup"><h2>Local content.json not found</h2><p>${e.message}</p></div>`;
+  }
+}
+
+async function loadContent() {
+  try {
+    const res = await ghFetch(`/contents/${FILE_PATH}?ref=${BRANCH}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const decoded = atob(data.content.replace(/\n/g, ''));
+    const text = new TextDecoder().decode(
+      Uint8Array.from(decoded, c => c.charCodeAt(0))
+    );
+    content = JSON.parse(text);
+    originalContent = text;
+    window._fileSha = data.sha;
+    renderEditor();
+  } catch (e) {
+    app.innerHTML = `<div class="setup"><h2>সমস্যা হয়েছে</h2><p>${e.message}</p>
+      <button onclick="localStorage.removeItem('gh_token'); location.reload()">আবার চেষ্টা করুন</button></div>`;
+  }
+}
+
+// ── Render the editor ───────────────────────────────────────────────────────
+function renderEditor() {
+  changeCount = 0;
+  let html = `
+    <div class="topbar">
+      <h1>সম্পাদনা</h1>
+      <span class="status" id="status">যেকোনো লেখায় ক্লিক করে সম্পাদনা করুন</span>
+      <span class="changes-count" id="change-count" style="display:none">0 পরিবর্তন</span>
+      <button class="btn-save" id="btn-save" disabled onclick="handleSave()">সেভ করুন</button>
+      <button class="btn-save" style="background:#6b7280" onclick="localStorage.removeItem('gh_token'); location.reload()">লগ আউট</button>
+    </div>
+    <div class="article">
+  `;
+
+  // Hero
+  html += '<div class="hero">';
+  html += editableBlock('hero-title', 'h2', getBody('hero-title'));
+  html += editableBlock('hero-subtitle', 'h3', getBody('hero-subtitle'));
+  html += `<div class="lede">${editableBlock('hero-lede', 'p', getBody('hero-lede'))}</div>`;
+  html += '<div class="credits">';
+  for (let i = 0; i < 4; i++) {
+    const id = `hero-credit-${i}`;
+    const b = getBody(id);
+    if (b) html += editableBlock(id, 'p', b);
+  }
+  html += '</div></div>';
+
+  // Body sections, interleaved with interactives
+  const sections = groupSections(content.body);
+  const interactiveOrder = ['inquiry', 'verdicts', 'letter'];
+  let interactiveIdx = 0;
+
+  for (let si = 0; si < sections.length; si++) {
+    const sec = sections[si];
+    for (const block of sec) {
+      if (block.tag === 'h2') {
+        html += editableBlock(block.id, 'h2', block.text, 'section-heading');
+      } else {
+        html += editableBlock(block.id, 'p', block.text);
+      }
+    }
+
+    // After sections 0, 1, 3 → insert interactive (inquiry, verdicts, letter)
+    if (si === 0 && interactiveOrder[0]) {
+      html += renderInteractive('inquiry', 'ঘটনাক্রম (স্ক্রলি)');
+      interactiveIdx++;
+    } else if (si === 1 && interactiveOrder[1]) {
+      html += renderInteractive('verdicts', 'চার অভিযোগ, চার রায়');
+      interactiveIdx++;
+    } else if (si === 3 && interactiveOrder[2]) {
+      html += renderInteractive('letter', 'একটি চিঠির যাত্রা');
+      interactiveIdx++;
+    }
+  }
+
+  // Timeline (shown at the end of interactives section)
+  html += renderInteractive('timeline', 'টাইমলাইন');
+
+  html += '</div>';
+  app.innerHTML = html;
+}
+
+function getBody(id) {
+  const b = content.body.find(x => x.id === id);
+  return b ? b.text : '';
+}
+
+function groupSections(body) {
+  const groups = {};
+  for (const b of body) {
+    if (b.section === 'hero') continue;
+    if (!groups[b.section]) groups[b.section] = [];
+    groups[b.section].push(b);
+  }
+  return Object.values(groups);
+}
+
+function editableBlock(id, tag, text, cls = '') {
+  const className = cls ? ` class="${cls}"` : '';
+  return `<${tag}${className} data-editable="${id}" onclick="startEdit(this)" title="ক্লিক করে সম্পাদনা করুন">${text}</${tag}>`;
+}
+
+// ── Interactive rendering ───────────────────────────────────────────────────
+function renderInteractive(name, label) {
+  const data = content.interactives[name];
+  if (!data) return '';
+
+  let html = `<div class="interactive-section"><h3>ইন্টারঅ্যাক্টিভ: ${label}</h3>`;
+
+  // Header
+  if (data.header) {
+    html += '<div class="field-group"><div class="field-group-title">হেডার</div>';
+    if (data.header.title) html += fieldEditable(`${name}.header.title`, 'শিরোনাম', data.header.title);
+    if (data.header.lede) html += fieldEditable(`${name}.header.lede`, 'ভূমিকা', data.header.lede);
+    if (data.header.howTo) html += fieldEditable(`${name}.header.howTo`, 'নির্দেশনা', data.header.howTo);
+    if (data.header.howToPhone) html += fieldEditable(`${name}.header.howToPhone`, 'নির্দেশনা (ফোন)', data.header.howToPhone);
+    if (data.header.kicker) html += fieldEditable(`${name}.header.kicker`, 'কিকার', data.header.kicker);
+    html += '</div>';
+  }
+
+  // Note
+  if (data.note && typeof data.note === 'string') {
+    html += fieldEditable(`${name}.note`, 'উৎস নোট', data.note);
+  }
+
+  // Specific content per interactive
+  if (name === 'inquiry') {
+    html += renderInquiryContent(data);
+  } else if (name === 'verdicts') {
+    html += renderVerdictsContent(data);
+  } else if (name === 'letter') {
+    html += renderLetterContent(data);
+  } else if (name === 'timeline') {
+    html += renderTimelineContent(data);
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function renderInquiryContent(data) {
+  let html = '';
+  if (data.phases) {
+    html += '<div class="field-group"><div class="field-group-title">পর্যায় (ফেজ)</div>';
+    data.phases.forEach((p, i) => {
+      html += fieldEditable(`inquiry.phases[${i}].title`, `পর্যায় ${p.n}`, p.title);
+      html += fieldEditable(`inquiry.phases[${i}].when`, `সময়`, p.when);
+    });
+    html += '</div>';
+  }
+  if (data.steps) {
+    data.steps.forEach((step, si) => {
+      html += `<div class="field-group"><div class="field-group-title">ধাপ ${si + 1}</div>`;
+      step.events.forEach((ev, ei) => {
+        ev.text.forEach((t, ti) => {
+          html += fieldEditable(`inquiry.steps[${si}].events[${ei}].text[${ti}]`, `ঘটনা ${ei + 1}, অনুচ্ছেদ ${ti + 1}`, t);
+        });
+        if (ev.src) {
+          html += fieldEditable(`inquiry.steps[${si}].events[${ei}].src`, 'সূত্র', ev.src);
+        }
+      });
+      html += '</div>';
+    });
+  }
+  return html;
+}
+
+function renderVerdictsContent(data) {
+  let html = '';
+  if (data.cases) {
+    data.cases.forEach((c, i) => {
+      html += `<div class="field-group"><div class="field-group-title">অভিযোগ ${c.n}: ${c.title}</div>`;
+      html += fieldEditable(`verdicts.cases[${i}].title`, 'শিরোনাম', c.title);
+      html += fieldEditable(`verdicts.cases[${i}].when`, 'সময়', c.when);
+      html += fieldEditable(`verdicts.cases[${i}].who`, 'অভিযুক্ত', c.who);
+      html += fieldEditable(`verdicts.cases[${i}].claim`, 'অভিযোগ', c.claim);
+      html += fieldEditable(`verdicts.cases[${i}].reply`, 'জবাব', c.reply);
+      html += fieldEditable(`verdicts.cases[${i}].stamp`, 'রায়', c.stamp);
+      html += fieldEditable(`verdicts.cases[${i}].sub`, 'উপশিরোনাম', c.sub);
+      if (c.why) {
+        c.why.forEach((w, wi) => {
+          html += fieldEditable(`verdicts.cases[${i}].why[${wi}]`, `যুক্তি ${wi + 1}`, w);
+        });
+      }
+      html += fieldEditable(`verdicts.cases[${i}].quote`, 'উদ্ধৃতি', c.quote);
+      if (c.open) html += fieldEditable(`verdicts.cases[${i}].open`, 'যে প্রশ্ন থেকে গেল', c.open);
+      html += '</div>';
+    });
+  }
+  return html;
+}
+
+function renderLetterContent(data) {
+  let html = '';
+  if (data.stops) {
+    data.stops.forEach((stop, i) => {
+      html += `<div class="field-group"><div class="field-group-title">ধাপ ${i + 1}: ${stop.t}</div>`;
+      html += fieldEditable(`letter.stops[${i}].when`, 'সময়', stop.when);
+      html += fieldEditable(`letter.stops[${i}].t`, 'শিরোনাম', stop.t);
+      if (stop.blocks) {
+        stop.blocks.forEach((block, bi) => {
+          if (block.p) {
+            html += fieldEditable(`letter.stops[${i}].blocks[${bi}].p`, `অনুচ্ছেদ`, block.p);
+          }
+          if (block.voice) {
+            html += fieldEditable(`letter.stops[${i}].blocks[${bi}].voice.by`, 'বক্তা', block.voice.by);
+            html += fieldEditable(`letter.stops[${i}].blocks[${bi}].voice.text`, 'উদ্ধৃতি', block.voice.text);
+          }
+          if (block.trio) {
+            block.trio.forEach((v, vi) => {
+              html += fieldEditable(`letter.stops[${i}].blocks[${bi}].trio[${vi}].by`, `বক্তা ${vi + 1}`, v.by);
+              html += fieldEditable(`letter.stops[${i}].blocks[${bi}].trio[${vi}].text`, `উদ্ধৃতি ${vi + 1}`, v.text);
+            });
+          }
+        });
+      }
+      if (stop.src) html += fieldEditable(`letter.stops[${i}].src`, 'সূত্র', stop.src);
+      if (stop.recTxt) html += fieldEditable(`letter.stops[${i}].recTxt`, 'রেকর্ড', stop.recTxt);
+      html += '</div>';
+    });
+  }
+  if (data.endQuote) {
+    html += '<div class="field-group"><div class="field-group-title">শেষ উদ্ধৃতি</div>';
+    html += fieldEditable('letter.endQuote.text', 'উদ্ধৃতি', data.endQuote.text);
+    html += fieldEditable('letter.endQuote.by', 'বক্তা', data.endQuote.by);
+    html += '</div>';
+  }
+  return html;
+}
+
+function renderTimelineContent(data) {
+  let html = '';
+  if (data.figures) {
+    html += '<div class="field-group"><div class="field-group-title">মূল সংখ্যা</div>';
+    data.figures.forEach((f, i) => {
+      html += fieldEditable(`timeline.figures[${i}].value`, `সংখ্যা ${i + 1}`, f.value);
+      html += fieldEditable(`timeline.figures[${i}].text`, `বিবরণ`, f.text);
+    });
+    html += '</div>';
+  }
+  if (data.events) {
+    data.events.forEach((ev, i) => {
+      html += `<div class="field-group"><div class="field-group-title">দিন ${ev.d}: ${ev.t.substring(0, 40)}...</div>`;
+      html += fieldEditable(`timeline.events[${i}].t`, 'শিরোনাম', ev.t);
+      html += fieldEditable(`timeline.events[${i}].b`, 'বিবরণ', ev.b);
+      if (ev.s) html += fieldEditable(`timeline.events[${i}].s`, 'সূত্র', ev.s);
+      html += '</div>';
+    });
+  }
+  if (data.after) {
+    html += '<div class="field-group"><div class="field-group-title">এরপর যা হলো</div>';
+    data.after.forEach((a, i) => {
+      html += fieldEditable(`timeline.after[${i}].when`, 'তারিখ', a.when);
+      html += fieldEditable(`timeline.after[${i}].text`, 'বিবরণ', a.text);
+    });
+    html += '</div>';
+  }
+  if (data.phases) {
+    html += '<div class="field-group"><div class="field-group-title">কোন কাজে কত দিন</div>';
+    data.phases.forEach((p, i) => {
+      html += fieldEditable(`timeline.phases[${i}].label`, `ফেজ ${i + 1}`, p.label);
+      html += fieldEditable(`timeline.phases[${i}].text`, 'সময়', p.text);
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function fieldEditable(path, label, text) {
+  return `<div class="field">
+    <div class="field-label">${label}</div>
+    <p data-editable="${path}" data-type="interactive" onclick="startEdit(this)" title="ক্লিক করে সম্পাদনা করুন">${text || ''}</p>
+  </div>`;
+}
+
+// ── Editing ─────────────────────────────────────────────────────────────────
+function startEdit(el) {
+  if (el.classList.contains('editing')) return;
+  el.classList.add('editing');
+  el.contentEditable = true;
+  el.focus();
+
+  // Select all text for easy replacement
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  el.addEventListener('blur', () => finishEdit(el), { once: true });
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { el.blur(); }
+  });
+}
+
+function finishEdit(el) {
+  el.contentEditable = false;
+  el.classList.remove('editing');
+
+  const id = el.dataset.editable;
+  const type = el.dataset.type;
+  const newText = el.innerHTML.trim();
+
+  if (type === 'interactive') {
+    setNestedValue(content.interactives, id, newText);
+  } else {
+    const block = content.body.find(b => b.id === id);
+    if (block) block.text = newText;
+  }
+
+  // Check if changed from original
+  const currentJson = JSON.stringify(content, null, 2);
+  if (currentJson !== originalContent) {
+    el.classList.add('changed');
+  } else {
+    el.classList.remove('changed');
+  }
+
+  updateChangeCount();
+}
+
+function setNestedValue(obj, path, value) {
+  // path like "verdicts.cases[0].title"
+  const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+  let current = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    current = current[parts[i]];
+    if (!current) return;
+  }
+  current[parts[parts.length - 1]] = value;
+}
+
+function updateChangeCount() {
+  const currentJson = JSON.stringify(content, null, 2);
+  const changed = currentJson !== originalContent;
+  const countEl = document.getElementById('change-count');
+  const saveBtn = document.getElementById('btn-save');
+
+  // Count changed elements
+  const changedEls = document.querySelectorAll('.changed');
+  changeCount = changedEls.length;
+
+  if (changed) {
+    countEl.style.display = '';
+    countEl.textContent = `${changeCount} পরিবর্তন`;
+    saveBtn.disabled = false;
+  } else {
+    countEl.style.display = 'none';
+    saveBtn.disabled = true;
+  }
+}
+
+// ── Save to GitHub ──────────────────────────────────────────────────────────
+async function handleSave() {
+  const btn = document.getElementById('btn-save');
+  const status = document.getElementById('status');
+  btn.disabled = true;
+  btn.textContent = 'সেভ হচ্ছে...';
+  status.textContent = 'GitHub-এ পাঠানো হচ্ছে...';
+
+  try {
+    const newContent = JSON.stringify(content, null, 2);
+    const encoded = btoa(unescape(encodeURIComponent(newContent)));
+
+    const res = await ghFetch(`/contents/${FILE_PATH}`, token, {
+      method: 'PUT',
+      body: JSON.stringify({
+        message: `সম্পাদনা: ${changeCount}টি পরিবর্তন`,
+        content: encoded,
+        sha: window._fileSha,
+        branch: BRANCH
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+
+    const result = await res.json();
+    window._fileSha = result.content.sha;
+    originalContent = newContent;
+
+    // Clear changed markers
+    document.querySelectorAll('.changed').forEach(el => el.classList.remove('changed'));
+    changeCount = 0;
+    updateChangeCount();
+
+    btn.textContent = 'সেভ করুন';
+    status.textContent = 'সেভ হয়েছে!';
+    showToast('সেভ হয়ে গেছে ✓');
+    setTimeout(() => { status.textContent = 'যেকোনো লেখায় ক্লিক করে সম্পাদনা করুন'; }, 3000);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'সেভ করুন';
+    status.textContent = `সমস্যা: ${e.message}`;
+    showToast('সেভ হয়নি, আবার চেষ্টা করুন');
+  }
+}
+
+// ── GitHub API helper ───────────────────────────────────────────────────────
+function ghFetch(path, tokenOverride, opts = {}) {
+  const t = tokenOverride || token;
+  return fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}${path}`, {
+    ...opts,
+    headers: {
+      Authorization: `Bearer ${t}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      ...(opts.headers || {})
+    }
+  });
+}
+
+// ── Toast ───────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

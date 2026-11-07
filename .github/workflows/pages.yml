@@ -39,6 +39,13 @@ jobs:
       - name: Mark the preview noindex
         run: sed -i 's|<meta name="robots" content="index, follow">|<meta name="robots" content="noindex, nofollow">|' dist/index.html
 
+      # Copy the editor page into dist so it's deployed alongside the preview.
+      - name: Include editor page
+        run: |
+          mkdir -p dist/editor
+          cp editor/index.html dist/editor/
+          cp editor/content.json dist/editor/ 2>/dev/null || true
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
