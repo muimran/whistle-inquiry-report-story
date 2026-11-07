@@ -356,9 +356,11 @@
 			display: flex;
 			flex-direction: column;
 			position: sticky;
-			/* centred in the space between the chart and the bottom of the screen,
-			   level with the card being read (the block is about 210px tall) */
-			top: calc((var(--wi-top-offset) - 14px + var(--stage-h) + 100vh) / 2 - 105px);
+			/* The top of the big digits sits on the line where a card turns fully
+			   opaque: 30% of the way down the space under the chart (the same line
+			   update() uses). 62px = padding 18 + label 21 + gap 6 + the space
+			   above the digits inside their 104px line (17). */
+			top: calc(0.7 * (var(--wi-top-offset) - 14px + var(--stage-h)) + 30vh - 62px);
 			padding-top: 18px;
 			transition: top 0.35s ease;
 		}
