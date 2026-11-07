@@ -44,7 +44,7 @@
 		} else {
 			el.scrollIntoView({ behavior, block: 'nearest' });
 		}
-		if (focusFront) frontEls[i]?.querySelector('button')?.focus({ preventScroll: true });
+		if (focusFront) frontEls[i]?.querySelector('.seg button')?.focus({ preventScroll: true });
 	}
 
 	const seen = $derived(cards.filter((s) => s.open).length);
@@ -63,7 +63,7 @@
 		cards[i].open = open;
 		if (focus) {
 			await tick();
-			(open ? backEls[i] : frontEls[i])?.querySelector('button')?.focus({ preventScroll: true });
+			(open ? backEls[i] : frontEls[i])?.querySelector(open ? '.back-btn' : '.seg button')?.focus({ preventScroll: true });
 		}
 	}
 	function choose(i, guess) {
@@ -154,11 +154,11 @@
 						</div>
 						<div class="ask">
 							<p>{C.ui.ask}</p>
+							<button type="button" class="link" onclick={() => choose(i, null)}>{C.ui.justShow}</button>
 							<div class="seg" role="group" aria-label={C.ui.ask}>
 								<button type="button" class="vp" onclick={() => choose(i, 'p')}>{C.ui.proven}</button>
 								<button type="button" class="vn" onclick={() => choose(i, 'n')}>{C.ui.notProven}</button>
 							</div>
-							<button type="button" class="link" onclick={() => choose(i, null)}>{C.ui.justShow}</button>
 						</div>
 					</div>
 
@@ -168,11 +168,15 @@
 								<b>{c.stamp}</b>
 								<small>{c.sub}</small>
 							</div>
-							<button type="button" class="back-btn" aria-label={C.ui.back} onclick={() => setOpen(i, false, true)}
-								>{C.ui.backShort}</button
-							>
 						</div>
 						<div class="body">
+							<ul class="why">
+								{#each c.why as w, k (k)}<li>{w}</li>{/each}
+							</ul>
+							<p class="quote">{c.quote}</p>
+							<p class="q"><span class="tag">{C.ui.openQuestion}</span>{c.open}</p>
+						</div>
+						<div class="backbar">
 							{#if cards[i].guess}
 								<p class="yours">
 									{C.ui.yours}
@@ -180,19 +184,15 @@
 									{cards[i].guess === c.v ? C.ui.matched : C.ui.notMatched}
 								</p>
 							{/if}
-							<ul class="why">
-								{#each c.why as w, k (k)}<li>{w}</li>{/each}
-							</ul>
-							<p class="quote">{c.quote}</p>
-							<p class="q"><span class="tag">{C.ui.openQuestion}</span>{c.open}</p>
-						</div>
-						{#if i < C.cases.length - 1}
-							<div class="foot">
+							<button type="button" class="back-btn" aria-label={C.ui.back} onclick={() => setOpen(i, false, true)}
+								>{C.ui.backShort}</button
+							>
+							{#if i < C.cases.length - 1}
 								<button type="button" class="wi-primary next" onclick={() => showCase(i + 1, true)}
 									>{C.ui.nextCase}</button
 								>
-							</div>
-						{/if}
+							{/if}
+						</div>
 					</div>
 				</div>
 			</article>
@@ -211,13 +211,13 @@
 
 <style>
 	.vd-wrap {
-		--vd-band: #f1f1ec;
+		--vd-band: #f6f6f6; /* very light neutral grey */
 		/* the cards use red plus neutral blacks and greys only */
 		--vd-ink: #1c1c1c;
 		--vd-grey: #5e5e5e;
 		--vd-soft: #8a8a8a;
-		--vd-line: #e4e4e1;
-		--vd-wash: #efefec;
+		--vd-line: #e4e4e4;
+		--vd-wash: #efefef;
 	}
 	.vd-wrap > .wi-note {
 		margin-top: 14px;
@@ -316,8 +316,7 @@
 		scroll-margin-top: var(--wi-top-offset);
 	}
 	.next,
-	.hint,
-	.foot {
+	.hint {
 		display: none;
 	}
 	.flipper {
@@ -520,16 +519,32 @@
 			transform: scale(1);
 		}
 	}
+		/* bottom bar of the back: your guess on the left, "ফিরুন" in the corner where
+	   the proven / not proven choice was, so the pointer barely has to move */
+	.backbar {
+		margin-top: auto;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px 16px 12px;
+		border-top: 1px solid var(--vd-line);
+	}
 	.wi.wi .back-btn {
 		flex: none;
-		padding: 4px 11px;
-		font-size: 12.5px;
+		margin-left: auto;
+		padding: 5px 14px;
+		font-size: 13px;
 		border-radius: 999px;
-		border-color: currentColor;
-		background: rgba(255, 255, 255, 0.7);
-		color: inherit;
+		border-color: var(--vd-line);
+		background: var(--wi-card);
+		color: var(--vd-ink);
+	}
+	.wi.wi .back-btn:hover {
+		background: var(--vd-wash);
 	}
 	.wi.wi .yours {
+		flex: 1 1 auto;
+		min-width: 0;
 		font-size: 12.5px;
 		color: var(--vd-grey);
 	}
@@ -639,10 +654,12 @@
 			padding: 5px 10px;
 			font-size: 13px;
 		}
-		.foot {
-			display: flex;
-			justify-content: flex-end;
-			padding: 0 16px 14px;
+		.backbar {
+			flex-wrap: wrap;
+			row-gap: 6px;
+		}
+		.wi.wi .backbar .yours {
+			flex-basis: 100%;
 		}
 		.next {
 			display: inline-block;

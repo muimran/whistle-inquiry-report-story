@@ -137,7 +137,7 @@
 	.lt {
 		--lt-track: #c4ced6;
 		--lt-rule: #b9c7d1;
-		--lt-sheet: #fbfbf8;
+		--lt-sheet: #f6f6f6; /* very light neutral grey, same as the verdicts band */
 	}
 	/* No grey panel: like the inquiry scrolly, it sits straight on the page. */
 	.wi.wi.wi-frame.lt {
