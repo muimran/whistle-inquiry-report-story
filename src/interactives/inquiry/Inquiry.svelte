@@ -48,6 +48,8 @@
 	let active = $state(0);
 	let w = $state(600);
 	let stageEl = $state();
+	let frameEl = $state();
+	const PHONE = typeof matchMedia !== 'undefined' ? matchMedia('(max-width: 640px)') : { matches: false };
 	let stageH = $state(0);
 	const stepEls = [];
 
@@ -104,6 +106,15 @@
 			if (stepEls[i] && stepEls[i].getBoundingClientRect().top <= line) idx = i;
 		}
 		if (idx !== active) active = idx;
+
+		// Phones: one swipe = one card. Firm ("mandatory") snapping is switched on
+		// only while the scrolly fills the screen, so the rest of the article
+		// scrolls freely (see the html.wi-snap rule in the styles).
+		if (frameEl) {
+			const r = frameEl.getBoundingClientRect();
+			const on = PHONE.matches && r.top <= 1 && r.bottom >= vh - 1;
+			document.documentElement.classList.toggle('wi-snap', on);
+		}
 	}
 	$effect(() => {
 		if (inFrame || !stageEl) return;
@@ -114,11 +125,12 @@
 		return () => {
 			window.removeEventListener('scroll', update);
 			window.removeEventListener('resize', update);
+			document.documentElement.classList.remove('wi-snap');
 		};
 	});
 </script>
 
-<div class="wi wi-frame inq" class:inframe={inFrame}>
+<div class="wi wi-frame inq" class:inframe={inFrame} bind:this={frameEl}>
 	<header>
 		<p class="wi-kicker">{C.header.kicker}</p>
 		<h3 class="wi-title">{C.header.title}</h3>
@@ -561,17 +573,25 @@
 		.ctr-sub {
 			font-size: 12.5px;
 		}
-		/* phones: cards settle into place just under the chart when the reader
-		   stops near one ("proximity" = a gentle pull, not a lock; the rest of
-		   the page scrolls normally because nothing else has snap points) */
-		:global(html) {
-			scroll-snap-type: y proximity;
+		/* phones: one swipe moves exactly one card, which settles just under
+		   the chart. Snapping is firm only while the scrolly fills the screen
+		   (main script adds html.wi-snap); the heading and the source note are
+		   snap points too, so the reader can swipe in and out of the scrolly. */
+		:global(html.wi-snap) {
+			scroll-snap-type: y mandatory;
 		}
 		.card {
 			scroll-snap-align: start;
+			scroll-snap-stop: always;
 			scroll-margin-top: calc(var(--stage-h) + 12px);
 		}
-		.inframe .card {
+		.inq > header,
+		.inq > .wi-note {
+			scroll-snap-align: start;
+		}
+		.inframe .card,
+		.inframe > header,
+		.inframe > .wi-note {
 			scroll-snap-align: none;
 		}
 		/* phones: one card on screen at a time. Each step fills the screen
@@ -587,9 +607,16 @@
 		.card {
 			padding: 14px;
 		}
+		/* slightly smaller, tighter text in the cards */
+		.wi.wi .when {
+			font-size: 14px;
+		}
 		.wi.wi .txt {
-			font-size: 16px;
-			line-height: 1.65;
+			font-size: 15px;
+			line-height: 1.55;
+		}
+		.wi.wi .src {
+			font-size: 11.5px;
 		}
 	}
 </style>
