@@ -110,9 +110,16 @@
 		// Phones: one swipe = one card. Firm ("mandatory") snapping is switched on
 		// only while the scrolly fills the screen, so the rest of the article
 		// scrolls freely (see the html.wi-snap rule in the styles).
+		// It stays off once the reader has scrolled past the last card's resting
+		// place, and comes back on (scrolling up) only when that card is back in
+		// place. Switching it on anywhere else makes the browser jump to the
+		// nearest card mid-swipe, which stops the scroll dead.
 		if (frameEl) {
 			const r = frameEl.getBoundingClientRect();
-			const on = PHONE.matches && r.top <= 1 && r.bottom >= vh - 1;
+			const last = stepEls[stepEls.length - 1]?.querySelector('.card');
+			const rest = last ? parseFloat(getComputedStyle(last).scrollMarginTop) || 0 : 0;
+			const notPast = !last || last.getBoundingClientRect().top >= rest - 4;
+			const on = PHONE.matches && r.top <= 1 && notPast;
 			document.documentElement.classList.toggle('wi-snap', on);
 		}
 	}
