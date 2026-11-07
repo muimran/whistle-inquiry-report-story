@@ -1,0 +1,47 @@
+# Builds the page and publishes it on GitHub Pages at
+# https://muimran.github.io/whistle-inquiry-report-story/
+# every time main is pushed (or when run by hand from the Actions tab).
+name: Publish preview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      # The preview copy asks search engines not to list it. The real page on
+      # thewhistle.news keeps "index, follow".
+      - name: Mark the preview noindex
+        run: sed -i 's|<meta name="robots" content="index, follow">|<meta name="robots" content="noindex, nofollow">|' dist/index.html
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

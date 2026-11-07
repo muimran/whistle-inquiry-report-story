@@ -27,6 +27,7 @@ The project lives in a public GitHub repo: https://github.com/muimran/whistle-in
 - **To view the page without installing anything:** download the repo (Code → Download ZIP), unzip it and open `dist/index.html` in a browser.
 - **`dist/` is committed on purpose,** so the built page is always there to look at or hand over. After changing anything, run `npm run build` before committing, so `dist/` matches the source.
 - **To share it:** send the repo link.
+- **Live preview:** https://muimran.github.io/whistle-inquiry-report-story/ is rebuilt and published automatically on every push to `main` (`.github/workflows/pages.yml`, progress under the repo's Actions tab). The preview copy is marked `noindex`, which asks search engines not to list it.
 
 ## Run it
 
