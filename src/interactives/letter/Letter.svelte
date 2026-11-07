@@ -72,9 +72,9 @@
 		const vh = window.innerHeight;
 		if (!viewH || w !== lastW || Math.abs(vh - viewH) > 160) viewH = vh;
 		sheetH = w === lastW ? Math.max(sheetH, h) : h;
-		if (full || w !== lastW) pinTop = Math.max(14, Math.round((viewH - sheetH - 24) / 2));
+		if (full || w !== lastW) pinTop = Math.max(8, Math.round((viewH - sheetH - 24) / 2));
 		lastW = w;
-		pinPhone = phone && !prefersReducedMotion() && pinTop + sheetH + 14 <= viewH;
+		pinPhone = phone && !prefersReducedMotion() && pinTop + sheetH + 8 <= viewH;
 		pinScroll();
 	}
 	$effect(() => {
@@ -582,6 +582,27 @@
 
 	/* ---------- Phones & narrow screens: one column ---------- */
 	@media (max-width: 820px) {
+		/* phones: a tighter sheet, so it fits the screen and can stay on it */
+		.sheet {
+			padding: 12px 12px 10px;
+			gap: 7px;
+		}
+		.wi.wi .sheet h3 {
+			font-size: 17px;
+		}
+		table {
+			font-size: 12.5px;
+			line-height: 1.35;
+		}
+		td {
+			padding: 4px 5px;
+		}
+		.total {
+			padding-top: 6px;
+		}
+		.wi.wi .total b {
+			font-size: 24px;
+		}
 		/* phones: the finished sheet only; each row opens its step on top */
 		.steps-col {
 			display: none;
