@@ -6,6 +6,7 @@
 	//   Phones:  each stop carries its own note-sheet line; a slim line at the top
 	//            of the screen keeps the running count; the full sheet comes last.
 	//   Inside an iframe (nothing can stay on screen): everything shown filled in.
+	import { untrack } from 'svelte';
 	import { bn } from '../../lib/bn.js';
 	import * as C from './content.js';
 
@@ -32,7 +33,8 @@
 	}
 	$effect(() => {
 		if (inFrame) return;
-		update();
+		// untrack: the effect must not re-run because update() reads and sets `active`
+		untrack(update);
 		window.addEventListener('scroll', update, { passive: true });
 		window.addEventListener('resize', update);
 		return () => {

@@ -5,6 +5,7 @@
 	// the same cards as a plain list instead.
 	import * as C from './content.js';
 	import { bn, MONTHS, prefersReducedMotion } from '../../lib/bn.js';
+	import { untrack } from 'svelte';
 	import { Tween } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
 
@@ -46,6 +47,7 @@
 	let active = $state(0);
 	let w = $state(600);
 	let stageEl = $state();
+	let stageH = $state(0);
 	const stepEls = [];
 
 	// Chart rows (px): deadline label, time band, months, years.
@@ -97,7 +99,8 @@
 	}
 	$effect(() => {
 		if (inFrame || !stageEl) return;
-		update();
+		// untrack: the effect must not re-run because update() reads and sets `active`
+		untrack(update);
 		window.addEventListener('scroll', update, { passive: true });
 		window.addEventListener('resize', update);
 		return () => {
@@ -120,7 +123,7 @@
 	<div class="scrolly">
 		{#if !inFrame}
 			<!-- The cards below say all of this in words, so screen readers skip it. -->
-			<div class="stage" bind:this={stageEl} aria-hidden="true">
+			<div class="stage" bind:this={stageEl} bind:clientHeight={stageH} aria-hidden="true">
 				<div class="ctr">
 					<span class="ctr-line">
 						<span class="ctr-value">{before ? '—' : C.ui.days.value(bn(days))}</span>
@@ -164,6 +167,18 @@
 			</div>
 		{/if}
 
+		<div class="cols" style:--stage-h="{stageH}px">
+		{#if !inFrame}
+			<!-- Desktop: the day count, large, beside the cards. Screen readers skip it. -->
+			<div class="bigday" aria-hidden="true">
+				<span class="bd-label">{C.ui.days.label}</span>
+				<span class="bd-num">{before ? '—' : bn(days)}</span>
+				{#if !before}<span class="bd-unit">দিন</span>{/if}
+				<span class="bd-sub" class:red={over > 0}>
+					{before ? C.ui.days.before : over > 0 ? C.ui.pastDeadline(bn(over)) : '\u00a0'}
+				</span>
+			</div>
+		{/if}
 		<div class="steps">
 			{#each steps as s, i (i)}
 				<section class="step" class:here={inFrame || i === active} bind:this={stepEls[i]}>
@@ -184,6 +199,7 @@
 					</div>
 				</section>
 			{/each}
+		</div>
 		</div>
 	</div>
 
@@ -310,6 +326,68 @@
 	}
 
 	/* ---------- the cards ---------- */
+	/* Desktop: big day count on the left (it stays in view under the chart),
+	   cards on the right. Phones keep the count inside the chart instead. */
+	.bigday {
+		display: none;
+	}
+	@media (min-width: 900px) {
+		.cols {
+			display: grid;
+			grid-template-columns: 220px minmax(0, 1fr);
+			column-gap: 40px;
+			align-items: start;
+		}
+		.inframe .cols {
+			display: block;
+		}
+		.bigday {
+			display: flex;
+			flex-direction: column;
+			position: sticky;
+			top: calc(var(--wi-top-offset) - 14px + var(--stage-h) + 28px);
+			padding-top: 18px;
+			transition: top 0.35s ease;
+		}
+		.bd-label {
+			font-size: 13px;
+			font-weight: 600;
+			color: var(--wi-muted);
+		}
+		.bd-num {
+			font-family: var(--wi-serif);
+			font-weight: 700;
+			font-size: 104px;
+			line-height: 1;
+			color: var(--inq-dark);
+			margin-top: 6px;
+			font-variant-numeric: tabular-nums;
+		}
+		.bd-unit {
+			font-family: var(--wi-serif);
+			font-weight: 700;
+			font-size: 28px;
+			line-height: 1.1;
+			color: var(--inq-dark);
+		}
+		.bd-sub {
+			margin-top: 10px;
+			font-size: 14px;
+			line-height: 1.45;
+			font-weight: 600;
+			color: var(--wi-muted);
+		}
+		.bd-sub.red {
+			color: var(--wi-red);
+		}
+		/* the small count in the chart isn't needed when the big one is there */
+		.stage .ctr {
+			display: none;
+		}
+		.card {
+			margin: 0;
+		}
+	}
 	.steps {
 		position: relative;
 		z-index: 1;

@@ -5,7 +5,7 @@
 	// screen; the section pins to the screen for a stretch of scrolling, on a
 	// band of its own colour, then lets go. Phones: one card at a time, swiped
 	// sideways, in the normal flow of the page.
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { bn, prefersReducedMotion } from '../../lib/bn.js';
 	import * as C from './content.js';
 
@@ -100,7 +100,8 @@
 	}
 	$effect(() => {
 		if (inFrame || !frameEl) return;
-		measure();
+		// untrack: the effect must not re-run because measure() reads and sets `pin`
+		untrack(measure);
 		document.fonts?.ready.then(measure);
 		const ro = new ResizeObserver(measure);
 		ro.observe(frameEl);
