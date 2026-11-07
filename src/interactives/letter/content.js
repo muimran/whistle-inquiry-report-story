@@ -12,7 +12,7 @@ export const header = {
 	title: 'একটি চিঠির যাত্রা',
 	lede: '২০২১ সালের শেষে জাহানারা আলম ১৩ পাতার একটি চিঠি হাতে লিখে বিসিবির প্রধান নির্বাহীর হাতে দেন। চিঠিটি কার কাছে গেল, কে কী বললেন, আর কোথায় এর কোনো লিখিত চিহ্ন রইল, ধাপে ধাপে দেখুন।',
 	// Desktop shows the note-sheet beside the steps; phones show it inside each step.
-	howToPhone: 'নোটশিটের যেকোনো ধাপে চাপ দিলে সেই ধাপের পুরো ঘটনা খুলবে।'
+	howToPhone: 'নোটশিটের যেকোনো ধাপে ট্যাপ করলে সেই ধাপের পুরো ঘটনা খুলবে।'
 };
 
 export const ui = {
@@ -28,7 +28,7 @@ export const ui = {
 	tallyCount: (n) => `${n}টি ধাপে`,
 	tallyPeriod: '২০২১–২৪',
 	// phones: the finished note-sheet, each row opens its step on top
-	tapHint: 'যেকোনো ধাপে চাপ দিয়ে পুরো ঘটনা পড়ুন',
+	tapHint: 'যেকোনো ধাপে ট্যাপ করে পুরো ঘটনা পড়ুন',
 	stepOf: (n, total) => `ধাপ ${n} / ${total}`,
 	prevStep: '← আগের',
 	nextStep: 'পরের →',
