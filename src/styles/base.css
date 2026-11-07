@@ -15,8 +15,8 @@
 	--wi-line: #d5d8d7;
 	--wi-panel: #eef0ef; /* same grey as the site's investigation box */
 	--wi-card: #ffffff;
-	--wi-red: #d32f2f; /* the site's own red (#e53935), one step darker so small text stays readable */
-	--wi-red-soft: #fbe3e2;
+	--wi-red: #ef5350; /* a lighter step of the site's hover red (#e53935, --primary) */
+	--wi-red-soft: #fdeceb;
 	--wi-blue: #3f6680;
 	--wi-blue-soft: #dce8f0;
 	--wi-serif: 'Noto Serif Bengali', serif;
