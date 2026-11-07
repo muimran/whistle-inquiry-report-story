@@ -165,7 +165,6 @@
 					<div class="face back" inert={!cards[i].open} bind:this={backEls[i]}>
 						<div class="verdict {c.v}">
 							<div class="vtext">
-								<span class="vlabel">{C.ui.verdictOf(bn(c.n))}</span>
 								<b>{c.stamp}</b>
 								<small>{c.sub}</small>
 							</div>
@@ -213,6 +212,12 @@
 <style>
 	.vd-wrap {
 		--vd-band: #f1f1ec;
+		/* the cards use red plus neutral blacks and greys only */
+		--vd-ink: #1c1c1c;
+		--vd-grey: #5e5e5e;
+		--vd-soft: #8a8a8a;
+		--vd-line: #e4e4e1;
+		--vd-wash: #efefec;
 	}
 	.vd-wrap > .wi-note {
 		margin-top: 14px;
@@ -291,7 +296,7 @@
 		background: var(--wi-red);
 	}
 	.pip.n {
-		background: var(--wi-blue);
+		background: #4a4a4a;
 	}
 	.tally .txt {
 		flex: 1 1 220px;
@@ -333,7 +338,7 @@
 		min-width: 0;
 		overflow: hidden;
 		background: var(--wi-card);
-		border: 1px solid #e2e3df;
+		border: 1px solid var(--vd-line);
 		border-radius: 10px;
 		box-shadow:
 			0 1px 2px rgba(17, 17, 17, 0.04),
@@ -366,7 +371,7 @@
 	/* front: who and what, then the two sides in their own words */
 	.wi.wi .meta {
 		font-size: 12px;
-		color: var(--wi-muted);
+		color: var(--vd-grey);
 	}
 	.wi.wi .meta b {
 		color: var(--wi-red);
@@ -384,7 +389,7 @@
 	.wi.wi .who {
 		font-size: 12.5px;
 		line-height: 1.45;
-		color: var(--wi-muted);
+		color: var(--vd-grey);
 		margin-bottom: 3px;
 	}
 	.wi.wi .voice {
@@ -394,27 +399,17 @@
 		color: var(--wi-body);
 	}
 	.tag {
-		display: inline-flex;
-		align-items: center;
-		gap: 5px;
 		margin-right: 6px;
 		font-family: var(--wi-sans);
 		font-size: 11.5px;
 		font-weight: 700;
 		vertical-align: 1px;
 	}
-	.tag::before {
-		content: '';
-		width: 7px;
-		height: 7px;
-		border-radius: 50%;
-		background: currentColor;
-	}
 	.her .tag {
 		color: var(--wi-red);
 	}
 	.him .tag {
-		color: var(--wi-muted);
+		color: var(--vd-ink);
 	}
 
 	/* the question along the bottom of the front */
@@ -423,20 +418,19 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		padding: 9px 16px;
-		background: #f7f7f4;
-		border-top: 1px solid #ecece7;
+		padding: 10px 16px 12px;
+		border-top: 1px solid var(--vd-line);
 	}
 	.wi.wi .ask p {
 		flex: 1 1 auto;
 		font-size: 13px;
 		font-weight: 600;
-		color: var(--wi-ink);
+		color: var(--vd-ink);
 	}
 	.seg {
 		flex: none;
 		display: inline-flex;
-		border: 1px solid var(--wi-line);
+		border: 1px solid var(--vd-line);
 		border-radius: 999px;
 		overflow: hidden;
 		background: var(--wi-card);
@@ -450,19 +444,19 @@
 		white-space: nowrap;
 	}
 	.wi.wi .seg button + button {
-		border-left: 1px solid var(--wi-line);
+		border-left: 1px solid var(--vd-line);
 	}
 	.wi.wi .seg .vp {
 		color: var(--wi-red);
 	}
 	.wi.wi .seg .vn {
-		color: var(--wi-blue);
+		color: var(--vd-ink);
 	}
 	.wi.wi .seg .vp:hover {
 		background: var(--wi-red-soft);
 	}
 	.wi.wi .seg .vn:hover {
-		background: var(--wi-blue-soft);
+		background: var(--vd-wash);
 	}
 	.wi.wi .link {
 		flex: none;
@@ -470,10 +464,14 @@
 		background: none;
 		padding: 5px 2px;
 		font-size: 12.5px;
-		color: var(--wi-muted);
-		text-decoration: underline;
+		color: var(--vd-soft);
+		text-decoration: none;
 		text-underline-offset: 3px;
 		white-space: nowrap;
+	}
+	.wi.wi .link:hover {
+		color: var(--vd-ink);
+		text-decoration: underline;
 	}
 
 	/* back: the verdict across the top in its colour, then the reasons */
@@ -489,16 +487,11 @@
 		color: var(--wi-red);
 	}
 	.verdict.n {
-		background: var(--wi-blue-soft);
-		color: var(--wi-blue);
+		background: var(--vd-wash);
+		color: var(--vd-ink);
 	}
 	.vtext {
 		min-width: 0;
-	}
-	.vlabel {
-		display: block;
-		font-size: 11.5px;
-		font-weight: 600;
 	}
 	.vtext b {
 		display: inline-block;
@@ -538,10 +531,10 @@
 	}
 	.wi.wi .yours {
 		font-size: 12.5px;
-		color: var(--wi-muted);
+		color: var(--vd-grey);
 	}
 	.wi.wi .yours b {
-		color: var(--wi-ink);
+		color: var(--vd-ink);
 	}
 	.wi.wi .why {
 		display: grid;
@@ -561,24 +554,22 @@
 		width: 5px;
 		height: 5px;
 		border-radius: 50%;
-		background: var(--wi-muted);
+		background: var(--vd-soft);
 	}
 	.wi.wi .quote {
 		font-family: var(--wi-serif);
 		font-style: italic;
 		font-size: 13.5px;
 		line-height: 1.5;
-		color: var(--wi-ink);
+		color: var(--vd-ink);
 	}
 	.wi.wi .q {
 		font-size: 12.5px;
 		line-height: 1.5;
-		color: var(--wi-body);
-		padding-top: 7px;
-		border-top: 1px dashed var(--wi-line);
+		color: var(--vd-grey);
 	}
 	.q .tag {
-		color: #8a5a00;
+		color: var(--vd-ink);
 	}
 
 	/* Desktop: a little tighter so the whole graphic fits one screen */
