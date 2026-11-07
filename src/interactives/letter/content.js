@@ -13,7 +13,7 @@ export const header = {
 	lede: '২০২১ সালের শেষে জাহানারা আলম ১৩ পাতার একটি চিঠি হাতে লিখে বিসিবির প্রধান নির্বাহীর হাতে দেন। চিঠিটি কার কাছে গেল, কে কী বললেন, আর কোথায় এর কোনো লিখিত চিহ্ন রইল, ধাপে ধাপে দেখুন।',
 	// Desktop shows the note-sheet beside the steps; phones show it inside each step.
 	howTo: 'পড়তে পড়তে নিচে নামুন। বাঁ পাশের নোটশিটে প্রতিটি হাতবদল লেখা হবে।',
-	howToPhone: 'পড়তে পড়তে নিচে নামুন। ওপরে গোনা হবে কয়টি ধাপে কোনো লিখিত রেকর্ড নেই।'
+	howToPhone: 'নোটশিটের যেকোনো ধাপে চাপ দিলে সেই ধাপের পুরো ঘটনা খুলবে।'
 };
 
 export const ui = {
@@ -27,7 +27,13 @@ export const ui = {
 	// phones: the line that stays at the top of the screen while the steps scroll past
 	tallyMissing: 'লিখিত রেকর্ড নেই:',
 	tallyCount: (n) => `${n}টি ধাপে`,
-	tallyPeriod: '২০২১–২৪'
+	tallyPeriod: '২০২১–২৪',
+	// phones: the finished note-sheet, each row opens its step on top
+	tapHint: 'যেকোনো ধাপে চাপ দিয়ে পুরো ঘটনা পড়ুন',
+	stepOf: (n, total) => `ধাপ ${n} / ${total}`,
+	prevStep: '← আগের',
+	nextStep: 'পরের →',
+	close: 'বন্ধ করুন'
 };
 
 // Stops 1–6 (index 0–5) are 2021–2024 and count toward the total.

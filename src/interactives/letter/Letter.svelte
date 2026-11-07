@@ -3,22 +3,93 @@
 	// in full, and scrolling past a stop fills its row in an office "note-sheet"
 	// and updates the count of steps with no written record.
 	//   Desktop: stops on the left, the note-sheet stays on screen on the right.
-	//   Phones:  each stop carries its own note-sheet line; a slim line at the top
-	//            of the screen keeps the running count; the full sheet comes last.
+	//   Phones:  the finished note-sheet on one screen; its rows fill in one by
+	//            one the first time it comes into view, and tapping a row opens
+	//            that step's full text on top (with previous / next).
 	//   Inside an iframe (nothing can stay on screen): everything shown filled in.
-	import { untrack } from 'svelte';
-	import { bn } from '../../lib/bn.js';
+	import { untrack, tick } from 'svelte';
+	import { bn, prefersReducedMotion } from '../../lib/bn.js';
 	import { inFlatFrame } from '../../lib/frame.js';
 	import * as C from './content.js';
 
 	const TOTAL = C.stops.length;
 	const inFrame = inFlatFrame();
 
+	const PHONE_Q = '(max-width: 820px)';
+	let phone = $state(typeof matchMedia !== 'undefined' && matchMedia(PHONE_Q).matches);
 	let active = $state(inFrame ? TOTAL - 1 : 0);
 	let fresh = $state(-1);
+	let revealed = $state(inFrame ? TOTAL : 0); // phones: rows filled in so far
+	let open = $state(-1); // phones: the step open on top
+	let sheetEl = $state();
+	let closeBtn = $state();
 	const stopEls = [];
+	const rowEls = [];
 
-	const missing = $derived(C.stops.slice(0, Math.min(active + 1, C.countUpTo)).filter((s) => s.rec === false).length);
+	// last filled row of the note-sheet: by scroll on desktop, by the fill on phones
+	const filledUpTo = $derived(inFrame ? TOTAL - 1 : phone ? revealed - 1 : active);
+	const missing = $derived(C.stops.slice(0, Math.min(filledUpTo + 1, C.countUpTo)).filter((s) => s.rec === false).length);
+
+	$effect(() => {
+		if (typeof matchMedia === 'undefined') return;
+		const mq = matchMedia(PHONE_Q);
+		const on = () => (phone = mq.matches);
+		mq.addEventListener('change', on);
+		return () => mq.removeEventListener('change', on);
+	});
+
+	// Phones: the first time the sheet comes into view, its rows fill in one by one.
+	$effect(() => {
+		if (inFrame || !phone || !sheetEl || untrack(() => revealed) >= TOTAL) return;
+		let timer;
+		const io = new IntersectionObserver(
+			(entries) => {
+				if (!entries.some((e) => e.isIntersecting)) return;
+				io.disconnect();
+				if (prefersReducedMotion()) {
+					revealed = TOTAL;
+					return;
+				}
+				timer = setInterval(() => {
+					revealed += 1;
+					fresh = revealed - 1;
+					if (revealed >= TOTAL) clearInterval(timer);
+				}, 220);
+			},
+			{ threshold: 0.35 }
+		);
+		io.observe(sheetEl);
+		return () => {
+			io.disconnect();
+			clearInterval(timer);
+		};
+	});
+
+	// A row of the sheet: phones open that step on top; desktop scrolls to it.
+	async function openStep(i) {
+		if (i < 0 || i >= TOTAL) return;
+		if (phone) {
+			open = i;
+			await tick();
+			closeBtn?.focus({ preventScroll: true });
+			return;
+		}
+		stopEls[i]?.scrollIntoView({ behavior: prefersReducedMotion() ? 'instant' : 'smooth', block: 'start' });
+	}
+	function closeStep() {
+		const i = open;
+		open = -1;
+		rowEls[i]?.focus({ preventScroll: true });
+	}
+	function rowKey(e, i) {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			openStep(i);
+		}
+	}
+	function onKey(e) {
+		if (e.key === 'Escape' && open >= 0) closeStep();
+	}
 
 	// The active stop is the last one whose top has passed 45% of the screen height.
 	function update() {
@@ -49,6 +120,30 @@
 	<div class="voice" class:red={v.red}><b>{v.by}</b>{v.text}</div>
 {/snippet}
 
+{#snippet stopBody(s)}
+	{#each s.blocks as b, j (j)}
+		{#if b.p}
+			<p>{b.p}</p>
+		{:else if b.voice}
+			{@render voice(b.voice)}
+		{:else if b.trio}
+			<div class="trio">
+				{#each b.trio as v, k (k)}{@render voice(v)}{/each}
+			</div>
+		{/if}
+	{/each}
+	<div class="ledger">
+		<div class="ledger-h">{C.ui.sheetTitle}</div>
+		<div class="ledger-row"><span>{s.row[0]}</span><span>{s.row[1]}</span></div>
+		<div class="ledger-rec" class:y={s.rec === true}>
+			{s.rec === true ? '✓ ' : '✕ '}{s.recTxt}
+		</div>
+	</div>
+	<div class="src">{C.ui.source}{s.src}</div>
+{/snippet}
+
+<svelte:window onkeydown={onKey} />
+
 <div class="wi wi-frame lt" class:inframe={inFrame}>
 	<header>
 		<div class="wi-kicker">{C.header.kicker}</div>
@@ -62,7 +157,7 @@
 	</header>
 
 	<div class="layout">
-		<section aria-label={C.ui.trackLabel}>
+		<section class="steps-col" aria-label={C.ui.trackLabel}>
 			{#if !inFrame}
 				<!-- Phones only: the running count stays at the top of the screen. The
 				     stops say the same in words, so screen readers skip it. -->
@@ -79,57 +174,74 @@
 							<span class="when">{s.when}</span>
 							<span class="t">{s.t}</span>
 						</div>
-						<div class="body">
-							{#each s.blocks as b, j (j)}
-								{#if b.p}
-									<p>{b.p}</p>
-								{:else if b.voice}
-									{@render voice(b.voice)}
-								{:else if b.trio}
-									<div class="trio">
-										{#each b.trio as v, k (k)}{@render voice(v)}{/each}
-									</div>
-								{/if}
-							{/each}
-							<div class="ledger">
-								<div class="ledger-h">{C.ui.sheetTitle}</div>
-								<div class="ledger-row"><span>{s.row[0]}</span><span>{s.row[1]}</span></div>
-								<div class="ledger-rec" class:y={s.rec === true}>
-									{s.rec === true ? '✓ ' : '✕ '}{s.recTxt}
-								</div>
-							</div>
-							<div class="src">{C.ui.source}{s.src}</div>
-						</div>
+						<div class="body">{@render stopBody(s)}</div>
 					</li>
 				{/each}
 			</ol>
 		</section>
 
-		<aside class="sheet" aria-label={C.ui.sheetTitle}>
+		<aside class="sheet" aria-label={C.ui.sheetTitle} bind:this={sheetEl}>
 			<h3>{C.ui.sheetTitle}</h3>
 			<div class="sub">{C.ui.sheetSub}</div>
 			<div class="tablewrap">
 				<table>
 					<thead>
-						<tr>{#each C.ui.cols as c, k (k)}<th>{c}</th>{/each}</tr>
+						<tr>{#each C.ui.cols as c, k (k)}<th>{c}</th>{/each}<th class="go"></th></tr>
 					</thead>
 					<tbody>
 						{#each C.stops as s, i (i)}
-							<tr class:pending={i > active} class:fresh={i === fresh}>
+							<!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
+							<tr
+								class:pending={i > filledUpTo}
+								class:fresh={i === fresh}
+								bind:this={rowEls[i]}
+								role="button"
+								tabindex="0"
+								aria-label="{bn(i + 1)}. {s.t}"
+								onclick={() => openStep(i)}
+								onkeydown={(e) => rowKey(e, i)}
+							>
 								<td>{s.row[0]}</td>
 								<td>{s.row[1]}</td>
 								<td class="rec"><span class={s.rec === true ? 'y' : 'n'}>{s.rec === true ? '✓ ' : '✕ '}{s.recTxt}</span></td>
+								<td class="go" aria-hidden="true">›</td>
 							</tr>
 						{/each}
 					</tbody>
 				</table>
 			</div>
 			<div class="total">
-				<span>{active < C.countUpTo ? C.ui.totalEarly : C.ui.totalLate}</span>
+				<span>{filledUpTo < C.countUpTo ? C.ui.totalEarly : C.ui.totalLate}</span>
 				<b>{bn(missing)}</b>
 			</div>
+			<p class="taphint">{C.ui.tapHint}</p>
 		</aside>
 	</div>
+
+	<!-- Phones: one step open on top of the sheet -->
+	{#if open >= 0}
+		{@const s = C.stops[open]}
+		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+		<div class="stepsheet" onclick={(e) => e.target === e.currentTarget && closeStep()}>
+			<div class="panel" role="dialog" aria-modal="true" aria-label={s.t}>
+				<div class="panel-top">
+					<span class="panel-count">{C.ui.stepOf(bn(open + 1), bn(TOTAL))}</span>
+					<button type="button" class="panel-close" bind:this={closeBtn} onclick={closeStep}>✕ {C.ui.close}</button>
+				</div>
+				<div class="head">
+					<span class="when">{s.when}</span>
+					<span class="t">{s.t}</span>
+				</div>
+				<div class="body">{@render stopBody(s)}</div>
+				<div class="panel-nav">
+					<button type="button" onclick={() => openStep(open - 1)} disabled={open === 0}>{C.ui.prevStep}</button>
+					<button type="button" class="wi-primary" onclick={() => openStep(open + 1)} disabled={open === TOTAL - 1}
+						>{C.ui.nextStep}</button
+					>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<p class="end">{C.endQuote.text}<small>{C.endQuote.by}</small></p>
 
@@ -183,11 +295,21 @@
 	.wi.wi .stop {
 		position: relative;
 		padding: 0 0 34px 44px;
+		/* a sheet row scrolls its step to just above the reading line (45%) */
+		scroll-margin-top: 30vh;
 	}
 	.phone,
 	.ledger,
-	.tally {
+	.tally,
+	.go,
+	.taphint {
 		display: none;
+	}
+	tbody tr {
+		cursor: pointer;
+	}
+	tbody tr:hover td {
+		background: rgba(17, 17, 17, 0.03);
 	}
 	.dot {
 		position: absolute;
@@ -391,6 +513,82 @@
 
 	/* ---------- Phones & narrow screens: one column ---------- */
 	@media (max-width: 820px) {
+		/* phones: the finished sheet only; each row opens its step on top */
+		.steps-col {
+			display: none;
+		}
+		.go {
+			display: table-cell;
+			width: 14px;
+			padding-left: 0;
+			text-align: right;
+			font-size: 18px;
+			line-height: 1;
+			color: #9a9a9a;
+			vertical-align: middle;
+		}
+		tbody tr:active td {
+			background: rgba(17, 17, 17, 0.06);
+		}
+		.wi.wi .taphint {
+			display: block;
+			font-size: 12.5px;
+			color: var(--wi-muted);
+			text-align: center;
+		}
+		.stepsheet {
+			position: fixed;
+			inset: 0;
+			z-index: 10000001;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 16px 12px;
+			background: rgba(17, 17, 17, 0.55);
+			overscroll-behavior: contain;
+		}
+		.panel {
+			width: 100%;
+			max-width: 460px;
+			max-height: calc(100vh - 32px);
+			overflow-y: auto;
+			overscroll-behavior: contain;
+			background: var(--wi-card);
+			border-radius: 12px;
+			padding: 14px 16px 16px;
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+		.panel-top {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+		.panel-count {
+			font-size: 12.5px;
+			font-weight: 600;
+			color: var(--wi-muted);
+		}
+		.wi.wi .panel-close {
+			padding: 4px 12px;
+			border-radius: 999px;
+			font-size: 13px;
+		}
+		.panel .body {
+			margin-top: 0;
+		}
+		.panel-nav {
+			display: flex;
+			justify-content: space-between;
+			gap: 10px;
+			padding-top: 10px;
+			border-top: 1px solid var(--wi-line);
+		}
+		.wi.wi .panel-nav button {
+			min-height: 40px;
+			padding: 6px 16px;
+		}
 		.layout {
 			grid-template-columns: 1fr;
 		}
