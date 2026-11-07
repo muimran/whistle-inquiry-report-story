@@ -561,10 +561,25 @@
 		.ctr-sub {
 			font-size: 12.5px;
 		}
-		/* phones: the same gap after every card, about a fifth of the screen
-		   (~180px on an 812px-tall phone) */
+		/* phones: cards settle into place just under the chart when the reader
+		   stops near one ("proximity" = a gentle pull, not a lock; the rest of
+		   the page scrolls normally because nothing else has snap points) */
+		:global(html) {
+			scroll-snap-type: y proximity;
+		}
+		.card {
+			scroll-snap-align: start;
+			scroll-margin-top: calc(var(--stage-h) + 12px);
+		}
+		.inframe .card {
+			scroll-snap-align: none;
+		}
+		/* phones: one card on screen at a time. Each step fills the screen
+		   below the chart, so when a card settles under the chart the next one
+		   is still out of view. */
 		.step {
-			padding-bottom: 20vh;
+			padding-bottom: 0;
+			min-height: calc(100vh - var(--stage-h));
 		}
 		.step:last-child {
 			padding-bottom: 15vh;
