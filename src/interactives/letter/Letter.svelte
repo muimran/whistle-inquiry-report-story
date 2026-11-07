@@ -66,7 +66,11 @@
 		if (!sheetEl) return;
 		const w = sheetEl.offsetWidth;
 		const h = sheetEl.offsetHeight;
-		viewH = window.innerHeight;
+		// Phone browsers shrink the screen a little when their toolbar slides in
+		// (at the bottom of the page, say). Changing the pinned stretch then would
+		// make the page jump, so only a real change (rotating, say) counts.
+		const vh = window.innerHeight;
+		if (!viewH || w !== lastW || Math.abs(vh - viewH) > 160) viewH = vh;
 		sheetH = w === lastW ? Math.max(sheetH, h) : h;
 		if (full || w !== lastW) pinTop = Math.max(14, Math.round((viewH - sheetH - 24) / 2));
 		lastW = w;
