@@ -364,8 +364,8 @@
 	.body {
 		display: flex;
 		flex-direction: column;
-		gap: 7px;
-		padding: 14px 16px 12px;
+		gap: 6px;
+		padding: 12px 16px 10px;
 	}
 
 	/* front: who and what, then the two sides in their own words */
@@ -398,6 +398,30 @@
 		line-height: 1.55;
 		color: var(--wi-body);
 	}
+	/* the two sides as chat bubbles: Jahanara on the left, the accused on the right */
+	.wi.wi .voice.her,
+	.wi.wi .voice.him {
+		max-width: 90%;
+		padding: 5px 11px 6px;
+		border-radius: 14px;
+		font-size: 13.5px;
+		line-height: 1.5;
+	}
+	.wi.wi .voice.her {
+		align-self: flex-start;
+		background: var(--wi-red-soft);
+		border-bottom-left-radius: 4px;
+	}
+	.wi.wi .voice.him {
+		align-self: flex-end;
+		background: var(--vd-wash);
+		border-bottom-right-radius: 4px;
+	}
+	.voice .tag {
+		display: block;
+		margin: 0 0 1px;
+		font-size: 11px;
+	}
 	.tag {
 		margin-right: 6px;
 		font-family: var(--wi-sans);
@@ -418,7 +442,7 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		padding: 10px 16px 12px;
+		padding: 8px 16px 9px;
 		border-top: 1px solid var(--vd-line);
 	}
 	.wi.wi .ask p {
