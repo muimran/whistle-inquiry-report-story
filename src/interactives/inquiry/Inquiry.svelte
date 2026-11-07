@@ -5,6 +5,7 @@
 	// the same cards as a plain list instead.
 	import * as C from './content.js';
 	import { bn, MONTHS, prefersReducedMotion } from '../../lib/bn.js';
+	import { inFlatFrame } from '../../lib/frame.js';
 	import { untrack } from 'svelte';
 	import { Tween } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
@@ -42,7 +43,7 @@
 		months.push({ start, mid: (start + Math.min(next, T1 + DAY)) / 2, label: MONTHS[m - 1], year });
 	}
 
-	const inFrame = typeof window !== 'undefined' && window.self !== window.top;
+	const inFrame = inFlatFrame();
 
 	let active = $state(0);
 	let w = $state(600);

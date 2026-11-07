@@ -7,6 +7,7 @@
 	// sideways, in the normal flow of the page.
 	import { tick, untrack } from 'svelte';
 	import { bn, prefersReducedMotion } from '../../lib/bn.js';
+	import { inFlatFrame } from '../../lib/frame.js';
 	import * as C from './content.js';
 
 	let cards = $state(C.cases.map(() => ({ open: false, guess: null })));
@@ -81,7 +82,7 @@
 	// Only when the cards fit the screen height; never on phones or in an iframe.
 	const HOLD = 70;
 	const BAND_PAD = 20; // px above and below the cards on the band
-	const inFrame = typeof window !== 'undefined' && window.self !== window.top;
+	const inFrame = inFlatFrame();
 	let trackEl = $state();
 	let frameEl = $state();
 	let pin = $state(false);

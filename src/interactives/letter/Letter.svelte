@@ -8,10 +8,11 @@
 	//   Inside an iframe (nothing can stay on screen): everything shown filled in.
 	import { untrack } from 'svelte';
 	import { bn } from '../../lib/bn.js';
+	import { inFlatFrame } from '../../lib/frame.js';
 	import * as C from './content.js';
 
 	const TOTAL = C.stops.length;
-	const inFrame = typeof window !== 'undefined' && window.self !== window.top;
+	const inFrame = inFlatFrame();
 
 	let active = $state(inFrame ? TOTAL - 1 : 0);
 	let fresh = $state(-1);

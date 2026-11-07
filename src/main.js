@@ -3,6 +3,7 @@
 // standalone iframe pages in /embed.
 import './styles/base.css';
 import { mount } from 'svelte';
+import { inFlatFrame } from './lib/frame.js';
 import Inquiry from './interactives/inquiry/Inquiry.svelte';
 import Verdicts from './interactives/verdicts/Verdicts.svelte';
 import Letter from './interactives/letter/Letter.svelte';
@@ -25,7 +26,8 @@ function init() {
 		mount(Component, { target });
 	});
 
-	if (window.parent === window) hideMenuOverInteractives();
+	// Not in an embed that grows with its content (see lib/frame.js)
+	if (!inFlatFrame()) hideMenuOverInteractives();
 
 	// Inside an iframe: tell the parent page how tall we are, so a page that
 	// listens (optional snippet in README) can size the iframe exactly.
