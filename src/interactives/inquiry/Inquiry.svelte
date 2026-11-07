@@ -132,16 +132,15 @@
 		{#if !inFrame}
 			<!-- The cards below say all of this in words, so screen readers skip it. -->
 			<div class="stage" bind:this={stageEl} bind:clientHeight={stageH} aria-hidden="true">
+				<!-- label, then the number, then (under the number) the red line -->
 				<div class="ctr" class:off={before}>
+					<span class="ctr-label">{C.ui.days.label}</span>
 					<span class="ctr-figure">
 						<span class="ctr-num">{before ? '—' : bn(days)}</span>
 						<span class="ctr-unit">{C.ui.days.unit}</span>
 					</span>
-					<span class="ctr-text">
-						<span class="ctr-label">{C.ui.days.label}</span>
-						<span class="ctr-sub" class:red={over > 0}>
-							{before ? C.ui.days.before : over > 0 ? C.ui.pastDeadline(bn(over)) : ''}
-						</span>
+					<span class="ctr-sub" class:red={over > 0}>
+						{before ? C.ui.days.before : over > 0 ? C.ui.pastDeadline(bn(over)) : '\u00a0'}
 					</span>
 				</div>
 
@@ -267,13 +266,30 @@
 		box-shadow: 0 6px 12px -8px rgba(0, 0, 0, 0.18);
 	}
 	/* the day count in the bar (phones and tablets; desktop shows it beside the cards) */
+	/* Two fixed-width columns, centred: the label on the left, the number on
+	   the right with the red line under it. The widths never change, so the
+	   number stays put when the red line appears. */
 	.ctr {
-		display: flex;
-		align-items: center;
+		display: grid;
+		grid-template-columns: auto 170px;
 		justify-content: center;
-		gap: 12px;
+		align-items: center;
+		column-gap: 12px;
 		/* clear space between the number and the chart under it */
-		margin-bottom: 16px;
+		margin-bottom: 14px;
+	}
+	.ctr-label {
+		grid-column: 1;
+		grid-row: 1;
+		justify-self: end;
+	}
+	.ctr-figure {
+		grid-column: 2;
+		grid-row: 1;
+	}
+	.ctr-sub {
+		grid-column: 2;
+		grid-row: 2;
 	}
 	.ctr-figure {
 		display: inline-flex;
@@ -294,12 +310,6 @@
 		font-weight: 700;
 		font-size: 18px;
 		color: var(--inq-dark);
-	}
-	.ctr-text {
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
-		min-width: 0;
 	}
 	.ctr-label {
 		font-size: 12px;
@@ -539,8 +549,14 @@
 	}
 
 	@media (max-width: 640px) {
+		/* phones: the bar runs edge to edge, with no side edges or shadow,
+		   just a hairline under it */
 		.stage {
-			padding-top: 22px;
+			padding: 22px 16px 8px;
+			width: 100vw;
+			margin-left: calc(50% - 50vw);
+			margin-right: 0;
+			box-shadow: none;
 		}
 		.ctr-sub {
 			font-size: 12.5px;
