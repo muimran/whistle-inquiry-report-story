@@ -466,12 +466,14 @@
 		position: relative;
 		z-index: 1;
 	}
+	/* The same empty space after every card, whatever its length (a minimum
+	   height per step left big gaps after short cards and small ones after
+	   long cards). */
 	.step {
-		min-height: 78vh;
-		padding: 18px 0 8px;
+		padding: 18px 0 40vh;
 	}
 	.step:last-child {
-		min-height: 70vh;
+		padding-bottom: 20vh;
 	}
 	.card {
 		max-width: 640px;
@@ -541,12 +543,13 @@
 		.ctr-sub {
 			font-size: 12.5px;
 		}
-		/* shorter scroll: each card gets 60% of the screen instead of 78% */
+		/* phones: the same gap after every card, about a fifth of the screen
+		   (~180px on an 812px-tall phone) */
 		.step {
-			min-height: 60vh;
+			padding-bottom: 20vh;
 		}
 		.step:last-child {
-			min-height: 55vh;
+			padding-bottom: 15vh;
 		}
 		.card {
 			padding: 14px;
