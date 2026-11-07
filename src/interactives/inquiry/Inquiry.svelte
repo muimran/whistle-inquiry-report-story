@@ -236,7 +236,8 @@
 		z-index: 2;
 		background: #fff;
 		margin: 0 calc(-1 * var(--wi-pad));
-		padding: 14px var(--wi-pad) 8px;
+		/* a little breathing room above the chart once it sits at the top */
+		padding: 34px var(--wi-pad) 8px;
 		border-bottom: 1px solid var(--wi-line);
 		box-shadow: 0 6px 12px -8px rgba(0, 0, 0, 0.18);
 	}
@@ -474,7 +475,7 @@
 
 	@media (max-width: 640px) {
 		.stage {
-			padding-top: 12px;
+			padding-top: 22px;
 		}
 		.ctr-value {
 			font-size: 21px;
