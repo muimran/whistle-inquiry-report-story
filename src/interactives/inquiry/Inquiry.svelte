@@ -143,7 +143,6 @@
 		<h3 class="wi-title">{C.header.title}</h3>
 		<p class="wi-lede">
 			{C.header.lede}
-			{#if !inFrame}<span class="how">{C.header.howTo}</span>{/if}
 		</p>
 	</header>
 
@@ -226,12 +225,6 @@
 			{#each steps as s, i (i)}
 				<section class="step" class:here={inFrame || i === active} bind:this={stepEls[i]}>
 					<div class="card">
-						{#if i === 0 || steps[i - 1].phase !== s.phase}
-							<h4 class="phase">
-								{C.ui.phase(C.phases[s.phase].n, C.phases[s.phase].title)}
-								<span>({C.phases[s.phase].when})</span>
-							</h4>
-						{/if}
 						{#each s.events as e, j (j)}
 							<div class="ev">
 								<p class="when">{e.when || short(e.date)}</p>
@@ -261,12 +254,6 @@
 		border: 0;
 		border-radius: 0;
 		padding: 0;
-	}
-	.how {
-		display: block;
-		margin-top: 6px;
-		color: var(--wi-ink);
-		font-weight: 500;
 	}
 
 	/* ---------- the chart that stays on screen ---------- */
@@ -519,17 +506,6 @@
 	}
 	.here .card {
 		opacity: 1;
-	}
-	.wi.wi .phase {
-		font-size: 13px;
-		line-height: 1.45;
-		font-weight: 600;
-		color: var(--wi-red);
-		margin-bottom: 10px;
-	}
-	.wi.wi .phase span {
-		color: var(--wi-muted);
-		font-weight: 500;
 	}
 	.ev + .ev {
 		margin-top: 12px;
