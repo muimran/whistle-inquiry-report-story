@@ -1,12 +1,6 @@
 {
   "body": [
     {
-      "id": "hero-title",
-      "tag": "h2",
-      "text": "জাহানারার অভিযোগ",
-      "section": "hero"
-    },
-    {
       "id": "hero-subtitle",
       "tag": "h3",
       "text": "যে প্রতিবেদন ‘কখনোই’ প্রকাশ করতে চায় না বিসিবি",
