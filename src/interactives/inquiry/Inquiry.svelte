@@ -60,7 +60,7 @@
 	const narrow = $derived(w < 500);
 	const Y = $derived(
 		narrow
-			? { flag: 12, band: 34, bandH: 10, month: 60, year: 74, h: 78 }
+			? { flag: 18, band: 44, bandH: 10, month: 70, year: 84, h: 88 } // label clear of the ticks
 			: { flag: 12, band: 24, bandH: 12, month: 54, year: 68, h: 72 }
 	);
 	const x = (t) => PAD + ((t - T0) / (T1 - T0)) * Math.max(0, w - 2 * PAD);
