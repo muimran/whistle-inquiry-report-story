@@ -590,6 +590,11 @@
 		.card {
 			padding: 14px;
 		}
+		/* tighter gap on both sides of the dotted line between dates */
+		.ev + .ev {
+			margin-top: 7px;
+			padding-top: 7px;
+		}
 		/* slightly smaller, tighter text in the cards */
 		.wi.wi .when {
 			font-size: 14px;
