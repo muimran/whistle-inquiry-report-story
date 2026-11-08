@@ -1,0 +1,39 @@
+# Makes the upload for thewhistle.news. When a release is published on GitHub
+# (Releases → Draft a new release → tag e.g. v1 → Publish), this builds the
+# page and attaches dist.zip to it. The zip holds the contents of dist/
+# (index.html, interactives.js/.css, embed/, images/) with no extra folder.
+#
+# The website team downloads the latest one from
+#   https://github.com/muimran/whistle-inquiry-report-story/releases/latest/download/dist.zip
+# (in Virtualmin: File Manager → the story's folder → Download from remote URL,
+# then Extract). Nothing here touches the server itself.
+name: Release zip
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Check it is the real-site version
+        run: grep -q '<meta name="robots" content="index, follow">' dist/index.html
+      - name: Zip dist
+        run: cd dist && zip -qr ../dist.zip .
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist.zip --clobber
