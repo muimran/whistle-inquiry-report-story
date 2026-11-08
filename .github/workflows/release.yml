@@ -4,7 +4,9 @@
 # (index.html, interactives.js/.css, embed/, images/) with no extra folder.
 #
 # The website team downloads the latest one from
-#   https://github.com/muimran/whistle-inquiry-report-story/releases/latest/download/dist.zip
+#   https://raw.githubusercontent.com/muimran/whistle-inquiry-report-story/release/dist.zip
+# (or, when GitHub's release downloads work,
+#   https://github.com/muimran/whistle-inquiry-report-story/releases/latest/download/dist.zip)
 # (in Virtualmin: File Manager → the story's folder → Download from remote URL,
 # then Extract). Nothing here touches the server itself.
 name: Release zip
@@ -12,6 +14,11 @@ name: Release zip
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to rebuild (e.g. v1)
+        required: true
 
 permissions:
   contents: write
@@ -22,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -33,7 +40,20 @@ jobs:
         run: grep -q '<meta name="robots" content="index, follow">' dist/index.html
       - name: Zip dist
         run: cd dist && zip -qr ../dist.zip .
+      # Second copy on the 'release' branch, served from raw.githubusercontent.com,
+      # in case GitHub's release downloads are down (they sometimes return 504):
+      #   https://raw.githubusercontent.com/muimran/whistle-inquiry-report-story/release/dist.zip
+      - name: Copy to the release branch
+        run: |
+          mkdir /tmp/rel && cp dist.zip /tmp/rel/
+          echo "${{ github.event.release.tag_name || inputs.tag }}" > /tmp/rel/VERSION
+          cd /tmp/rel
+          git init -q -b release
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -q -m "dist.zip for ${{ github.event.release.tag_name || inputs.tag }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" release
       - name: Attach to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" dist.zip --clobber
+        run: gh release upload "${{ github.event.release.tag_name || inputs.tag }}" dist.zip --clobber
