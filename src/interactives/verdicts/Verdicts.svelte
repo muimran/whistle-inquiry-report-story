@@ -182,11 +182,11 @@
 							</div>
 						</div>
 						<div class="body">
+							<h4 class="decision">{C.ui.decision}</h4>
 							<ul class="why">
 								{#each c.why as w, k (k)}<li>{w}</li>{/each}
 							</ul>
 							<p class="quote">{c.quote}</p>
-							<p class="q"><span class="tag">{C.ui.openQuestion}</span>{c.open}</p>
 						</div>
 						<div class="backbar">
 							{#if cards[i].guess}
@@ -614,12 +614,11 @@
 		line-height: 1.5;
 		color: var(--vd-ink);
 	}
-	.wi.wi .q {
-		font-size: 12.5px;
-		line-height: 1.5;
-		color: var(--vd-grey);
-	}
-	.q .tag {
+	.wi.wi .decision {
+		font-size: 16px;
+		font-weight: 700;
+		line-height: 1.2;
+		margin-top: -3px;
 		color: var(--vd-ink);
 	}
 
@@ -635,6 +634,9 @@
 		.wi.wi .wi-title {
 			font-size: 27px;
 			margin-bottom: 4px;
+		}
+		.body {
+			padding-top: 9px;
 		}
 	}
 

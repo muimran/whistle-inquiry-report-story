@@ -21,7 +21,7 @@ export const ui = {
 	tileOpen: 'পড়ুন, রায় দিন →', // phones: on each small card
 	close: 'বন্ধ করুন',
 	swipeHint: 'পাশে সরিয়ে পরের অভিযোগ দেখুন',
-	openQuestion: 'যে প্রশ্ন থেকে গেল',
+	decision: 'কমিটির সিদ্ধান্ত',
 	yours: 'আপনার রায়:',
 	matched: 'কমিটির সঙ্গে মিলেছে',
 	notMatched: 'কমিটির সঙ্গে মেলেনি',
