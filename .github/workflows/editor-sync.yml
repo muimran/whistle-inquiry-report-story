@@ -1,0 +1,99 @@
+# Editor sync: keeps the click-to-edit editor and the source files in step.
+#
+# On every push to main that touches the article text, an interactive's text or
+# the editor's content.json:
+#   1. apply.js writes any editor changes into index.html / content.js
+#      (changes = differences between content.json and applied.json)
+#   2. the page is built; if an edit would break it, all edits in this run are
+#      dropped, the editor text is reset, and the run is marked failed
+#   3. extract.js refreshes content.json + applied.json from the source
+#   4. source, dist and editor files are committed, and the preview is published
+#
+# Nothing here touches thewhistle.news. The live page changes only when the
+# website team uploads a dist folder.
+#
+# TO STOP IT once editing is finished: GitHub → Actions → "Editor sync" →
+# "…" menu → Disable workflow (see editor/README.md).
+name: Editor sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'src/interactives/*/content.js'
+      - 'editor/content.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# one run at a time; a queued run applies every edit saved since the last one
+concurrency:
+  group: editor-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Apply editor changes
+        id: apply
+        run: |
+          set +e
+          node editor/apply.js
+          code=$?
+          set -e
+          cat editor/last-apply.txt >> "$GITHUB_STEP_SUMMARY"
+          echo "skipped=$([ $code = 2 ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+          [ $code = 0 ] || [ $code = 2 ]
+
+      - name: Build (check the edits don't break the page)
+        id: build
+        continue-on-error: true
+        run: npm run build
+
+      - name: Drop the edits if the build failed
+        if: steps.build.outcome == 'failure'
+        run: |
+          git checkout -- index.html src/interactives
+          npm run build
+          echo "### Edits dropped: they would have broken the page" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Refresh editor files from the source
+        run: node editor/extract.js
+
+      - name: Commit and push
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A index.html src/interactives dist editor/content.json editor/applied.json
+          if git diff --cached --quiet; then echo "Nothing to commit"; echo "pushed=no" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "${{ steps.build.outcome }}" = "failure" ]; then
+            msg="auto: editor edit rejected (it would break the page)"
+          elif grep -q '^[1-9][0-9]* edit(s) applied' editor/last-apply.txt; then
+            msg="Editor: $(head -1 editor/last-apply.txt)"
+          else
+            msg="auto: sync editor/content.json from source"
+          fi
+          git commit -q -m "$msg" -m "$(cat editor/last-apply.txt)"
+          git push
+          echo "pushed=yes" >> "$GITHUB_OUTPUT"
+
+      - name: Mark the run failed if edits were dropped or skipped
+        if: steps.build.outcome == 'failure' || steps.apply.outputs.skipped == 'yes'
+        run: |
+          echo "Some editor edits were not applied; see the summary above."
+          exit 1

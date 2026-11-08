@@ -7,6 +7,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # commits made by the editor sync don't trigger a push run, so publish after it
+  workflow_run:
+    workflows: [Editor sync]
+    types: [completed]
 
 permissions:
   contents: read
@@ -25,6 +29,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-node@v4
         with:

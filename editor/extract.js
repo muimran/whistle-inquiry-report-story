@@ -133,7 +133,10 @@ async function main() {
     content.interactives[name] = data;
   }
 
-  writeFileSync(join(__dirname, 'content.json'), JSON.stringify(content, null, 2), 'utf8');
+  const json = JSON.stringify(content, null, 2);
+  writeFileSync(join(__dirname, 'content.json'), json, 'utf8');
+  // the baseline apply.js compares against: source and editor now match
+  writeFileSync(join(__dirname, 'applied.json'), json, 'utf8');
   console.log(`Extracted ${bodyBlocks.length} body blocks and ${Object.keys(content.interactives).length} interactives → editor/content.json`);
 }
 
