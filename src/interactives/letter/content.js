@@ -20,8 +20,8 @@ export const ui = {
 	sheetTitle: 'নথি চলাচল',
 	sheetSub: 'বিসিবির কাছে এই চিঠির যে হিসাব থাকার কথা ছিল',
 	cols: ['কোথায় গেল', 'লিখিত রেকর্ড'],
-	totalEarly: '২০২১–২০২৪: যেসব ধাপে কোনো লিখিত রেকর্ড নেই',
-	totalLate: '২০২১–২০২৪: চার বছরে যেসব ধাপে লিখিত রেকর্ড নেই',
+	totalEarly: '২০২১ থেকে ২০২৫ সালের ডিসেম্বর: চার বছরে যেসব ধাপে লিখিত রেকর্ড নেই।',
+	totalLate: '২০২১ থেকে ২০২৫ সালের ডিসেম্বর: চার বছরে যেসব ধাপে লিখিত রেকর্ড নেই।',
 	source: 'সূত্র: ',
 	// phones: the line that stays at the top of the screen while the steps scroll past
 	tallyMissing: 'লিখিত রেকর্ড নেই:',
