@@ -9,6 +9,8 @@ It's a plain HTML article with three interactives built in Svelte.
 | Inquiry scrolly: সময় ছিল ১৫ কর্মদিবস, প্রতিবেদন এল ৮৩ দিনে | `src/interactives/inquiry/` |
 | Four verdicts: চার অভিযোগ, চার রায় | `src/interactives/verdicts/` |
 | Letter's journey: একটি চিঠির যাত্রা | `src/interactives/letter/` |
+
+> The inquiry scrolly is **not on the page** at the moment (switched off on request). Its code stays in `src/interactives/inquiry/`, and `index.html` has a comment showing the one line that brings it back.
 | Standalone page for each interactive (for iframes) | `embed/*.html` |
 | Source draft | `The_Whistle_tadanta-protibedon_v3-edited.docx` |
 | Text for the scrolly | `interactive timeline.docx` |
