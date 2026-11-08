@@ -46,6 +46,8 @@ const baseBody = new Map((base.body || []).map((b) => [b.id, b]));
 for (const block of content.body || []) {
 	const before = baseBody.get(block.id);
 	if (!before || before.text === block.text) continue;
+	block.text = tidyHtml(block.text);
+	if (before.text === block.text) continue;
 	const n = count(html, before.text);
 	if (n === 1) {
 		html = html.split(before.text).join(block.text);
@@ -97,6 +99,29 @@ console.log(lines.join('\n'));
 process.exit(skipped.length ? 2 : 0);
 
 // ---- helpers ----
+const ENT = { '&nbsp;': ' ', '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" };
+// Interactive text is shown exactly as written, so it must be plain text:
+// drop every tag (pasted Word formatting, stray <br>) and tidy the spaces.
+function plain(s) {
+	return s
+		.replace(/<br\s*\/?>/gi, ' ')
+		.replace(/<[^>]+>/g, '')
+		.replace(/&(nbsp|amp|lt|gt|quot|#39);/g, (m) => ENT[m])
+		.replace(/\s+/g, ' ')
+		.trim();
+}
+// Article text may keep simple tags (links, bold, italics); pasted formatting
+// (Word's spans, classes, styles, nested paragraphs) is removed.
+function tidyHtml(s) {
+	return s
+		.replace(/<\/?o:p[^>]*>/gi, '')
+		.replace(/<\/?(span|font|div|p)\b[^>]*>/gi, '')
+		.replace(/<br\s*\/?>\s*$/i, '')
+		.replace(/\s(class|style|lang|dir)="[^"]*"/gi, '')
+		.replace(/&nbsp;/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
+}
 function count(hay, needle) {
 	if (!needle) return 0;
 	return hay.split(needle).length - 1;
@@ -111,7 +136,10 @@ function jsEscape(s, q) {
 // Collect [old, new, path] for every string that changed.
 function diff(now, old, path, out) {
 	if (typeof now === 'string') {
-		if (typeof old === 'string' && old !== now) out.push([old, now, path]);
+		if (typeof old !== 'string' || old === now) return;
+		// keep a trailing space the original had (labels like 'সূত্র: ')
+		const clean = plain(now) + (old.endsWith(' ') && !plain(now).endsWith(' ') ? ' ' : '');
+		if (clean !== old) out.push([old, clean, path]);
 		return;
 	}
 	if (!now || !old || typeof now !== 'object' || typeof old !== 'object') return;

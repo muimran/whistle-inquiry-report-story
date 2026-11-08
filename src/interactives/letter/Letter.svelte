@@ -196,7 +196,7 @@
 			{s.rec === true ? '✓ ' : '✕ '}{s.recTxt}
 		</div>
 	</div>
-	<div class="src">{C.ui.source}{s.src}</div>
+	{#if s.src}<div class="src">{C.ui.source}{s.src}</div>{/if}
 {/snippet}
 
 <svelte:window onkeydown={onKey} />

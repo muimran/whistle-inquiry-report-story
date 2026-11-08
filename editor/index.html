@@ -594,6 +594,14 @@ function startEdit(el) {
   sel.removeAllRanges();
   sel.addRange(range);
 
+  // Paste as plain text only: text copied from Word or a web page brings
+  // hidden formatting that would show up as code in the interactives.
+  el.onpaste = (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain').replace(/\s*\n\s*/g, ' ');
+    document.execCommand('insertText', false, text);
+  };
+
   el.addEventListener('blur', () => finishEdit(el), { once: true });
   el.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { el.blur(); }
@@ -606,7 +614,8 @@ function finishEdit(el) {
 
   const id = el.dataset.editable;
   const type = el.dataset.type;
-  const newText = el.innerHTML.trim();
+  // interactives take plain text only; article text may keep simple tags
+  const newText = (type === 'interactive' ? el.textContent : el.innerHTML).replace(/\s+/g, ' ').trim();
 
   if (type === 'interactive') {
     setNestedValue(content.interactives, id, newText);
