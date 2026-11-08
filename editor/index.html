@@ -667,6 +667,58 @@ function updateChangeCount() {
 }
 
 // ── Save to GitHub ──────────────────────────────────────────────────────────
+// After every save, GitHub updates content.json again a minute later (the
+// editor sync). So a save never sends the copy this page loaded: it fetches
+// the latest content.json, puts this editor's changes on top, and sends that.
+// If someone else saved in the same moment, it tries again.
+
+// This editor's changes since the page loaded (or last saved).
+function myEdits() {
+  const base = JSON.parse(originalContent);
+  const edits = [];
+  const baseBody = new Map(base.body.map(b => [b.id, b.text]));
+  for (const b of content.body) {
+    const was = baseBody.get(b.id);
+    if (was !== undefined && was !== b.text) edits.push({ body: true, id: b.id, was, text: b.text });
+  }
+  (function walk(now, old, path) {
+    if (typeof now === 'string') {
+      if (typeof old === 'string' && old !== now) edits.push({ body: false, path, was: old, text: now });
+      return;
+    }
+    if (!now || !old || typeof now !== 'object' || now.__fn) return;
+    for (const k of Object.keys(now)) walk(now[k], old[k], path ? `${path}.${k}` : k);
+  })(content.interactives, base.interactives, '');
+  return edits;
+}
+
+// Put the edits onto a fresh copy. Article paragraphs are found by their old
+// text (positions can shift), interactive texts by their place.
+function mergeEdits(latest, edits) {
+  const missed = [];
+  for (const e of edits) {
+    if (e.body) {
+      const b = latest.body.find(x => x.text === e.was) || latest.body.find(x => x.id === e.id);
+      if (b) b.text = e.text; else missed.push(e);
+    } else {
+      const parts = e.path.split('.');
+      let cur = latest.interactives;
+      for (let i = 0; i < parts.length - 1 && cur; i++) cur = cur[parts[i]];
+      if (cur && typeof cur[parts.at(-1)] === 'string') cur[parts.at(-1)] = e.text; else missed.push(e);
+    }
+  }
+  return missed;
+}
+
+async function fetchLatest() {
+  const res = await ghFetch(`/contents/${FILE_PATH}?ref=${BRANCH}&t=${Date.now()}`, null, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  const decoded = atob(data.content.replace(/\n/g, ''));
+  const text = new TextDecoder().decode(Uint8Array.from(decoded, c => c.charCodeAt(0)));
+  return { json: JSON.parse(text), sha: data.sha };
+}
+
 async function handleSave() {
   const btn = document.getElementById('btn-save');
   const status = document.getElementById('status');
@@ -675,37 +727,48 @@ async function handleSave() {
   status.textContent = 'GitHub-এ পাঠানো হচ্ছে...';
 
   try {
-    const newContent = JSON.stringify(content, null, 2);
-    const encoded = btoa(unescape(encodeURIComponent(newContent)));
-
-    const res = await ghFetch(`/contents/${FILE_PATH}`, token, {
-      method: 'PUT',
-      body: JSON.stringify({
-        message: `সম্পাদনা: ${changeCount}টি পরিবর্তন`,
-        content: encoded,
-        sha: window._fileSha,
-        branch: BRANCH
-      })
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || `HTTP ${res.status}`);
+    const edits = myEdits();
+    let saved = null;
+    let missed = [];
+    for (let attempt = 0; attempt < 3 && !saved; attempt++) {
+      const latest = await fetchLatest();
+      missed = mergeEdits(latest.json, edits);
+      const newContent = JSON.stringify(latest.json, null, 2);
+      const res = await ghFetch(`/contents/${FILE_PATH}`, token, {
+        method: 'PUT',
+        body: JSON.stringify({
+          message: `সম্পাদনা: ${edits.length}টি পরিবর্তন`,
+          content: btoa(unescape(encodeURIComponent(newContent))),
+          sha: latest.sha,
+          branch: BRANCH
+        })
+      });
+      if (res.ok) {
+        saved = { json: latest.json, text: newContent, sha: (await res.json()).content.sha };
+      } else if (res.status !== 409 && res.status !== 422) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `HTTP ${res.status}`);
+      }
     }
+    if (!saved) throw new Error('অন্য কেউ একই সময়ে সেভ করছেন, একটু পরে আবার চেষ্টা করুন');
 
-    const result = await res.json();
-    window._fileSha = result.content.sha;
-    originalContent = newContent;
-
-    // Clear changed markers
-    document.querySelectorAll('.changed').forEach(el => el.classList.remove('changed'));
-    changeCount = 0;
-    updateChangeCount();
+    // show the latest text (including anyone else's changes), keeping the scroll
+    const y = window.scrollY;
+    content = saved.json;
+    originalContent = saved.text;
+    window._fileSha = saved.sha;
+    renderEditor();
+    window.scrollTo(0, y);
 
     btn.textContent = 'সেভ করুন';
-    status.textContent = 'সেভ হয়েছে!';
-    showToast('সেভ হয়ে গেছে ✓');
-    setTimeout(() => { status.textContent = 'যেকোনো লেখায় ক্লিক করে সম্পাদনা করুন'; }, 3000);
+    if (missed.length) {
+      status.textContent = `${missed.length}টি পরিবর্তন সেভ হয়নি: লেখাটি এর মধ্যে বদলে গেছে। আবার সম্পাদনা করুন।`;
+      showToast('কিছু পরিবর্তন সেভ হয়নি');
+    } else {
+      status.textContent = 'সেভ হয়েছে!';
+      showToast('সেভ হয়ে গেছে ✓');
+      setTimeout(() => { status.textContent = 'যেকোনো লেখায় ক্লিক করে সম্পাদনা করুন'; }, 3000);
+    }
   } catch (e) {
     btn.disabled = false;
     btn.textContent = 'সেভ করুন';
