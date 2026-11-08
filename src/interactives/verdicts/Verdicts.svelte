@@ -74,21 +74,30 @@
 	// height, with a thin bar showing how far through that stretch they are.
 	// Only when the cards fit the screen height; never on phones or in an iframe.
 	const HOLD = 70;
-	const BAND_PAD = 20; // px above and below the cards on the band
+	const BAND_PAD = 12; // px above and below the cards on the band
 	const inFrame = inFlatFrame();
 	let trackEl = $state();
 	let frameEl = $state();
 	let pin = $state(false);
 	let progress = $state(0);
+	// When the cards are taller than the screen, the band is as tall as the cards
+	// and sticks with its bottom at the bottom of the screen (stickTop < 0): all
+	// four cards stay in view, only the heading above them scrolls away.
+	let stageH = $state(0);
+	let stickTop = $state(0);
 
 	function onPageScroll() {
 		if (!pin || !trackEl) return;
-		const span = trackEl.offsetHeight - window.innerHeight;
-		progress = span > 0 ? Math.min(1, Math.max(0, -trackEl.getBoundingClientRect().top / span)) : 0;
+		const span = trackEl.offsetHeight - stageH;
+		progress = span > 0 ? Math.min(1, Math.max(0, (stickTop - trackEl.getBoundingClientRect().top) / span)) : 0;
 	}
 	function measure() {
 		if (!frameEl) return;
-		pin = frameEl.offsetHeight + 2 * BAND_PAD <= window.innerHeight;
+		const vh = window.innerHeight;
+		const need = frameEl.offsetHeight + 2 * BAND_PAD;
+		pin = need <= vh * 1.35; // much taller than the screen: no pin, it would hide too much
+		stageH = Math.max(vh, need);
+		stickTop = Math.min(0, vh - stageH);
 		onPageScroll();
 	}
 	$effect(() => {
@@ -111,8 +120,8 @@
 <svelte:window onkeydown={onKey} />
 
 <div class="wi vd-wrap" class:pin>
-	<div class="track" bind:this={trackEl} style:height={pin ? `calc(100vh + ${HOLD}vh)` : null}>
-	<div class="stage">
+	<div class="track" bind:this={trackEl} style:height={pin ? `calc(${stageH}px + ${HOLD}vh)` : null}>
+	<div class="stage" style:height={pin ? `${stageH}px` : null} style:top={pin ? `${stickTop}px` : null}>
 	<div class="wi wi-frame vd" bind:this={frameEl}>
 	<header>
 		<div class="wi-kicker">{C.header.kicker}</div>
@@ -243,7 +252,7 @@
 		justify-content: center;
 		width: 100vw;
 		margin-left: calc(50% - 50vw);
-		padding: 20px 16px;
+		padding: 12px 16px;
 		background: var(--vd-band);
 	}
 	.vd-wrap.pin .stage > .vd {
@@ -637,6 +646,13 @@
 		}
 		.body {
 			padding-top: 9px;
+		}
+		/* wider, slightly tighter bubbles so the four cards fit one screen */
+		.wi.wi .voice.her,
+		.wi.wi .voice.him {
+			max-width: 96%;
+			font-size: 13px;
+			line-height: 1.45;
 		}
 	}
 
