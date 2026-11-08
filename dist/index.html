@@ -32,7 +32,14 @@
 <link rel="stylesheet" href="https://www.thewhistle.news/common/css/eMythMakers.css">
 <!-- The site's menu row is 2px wider than a phone screen, which let the whole page
      slide sideways. "clip" stops that without breaking anything that stays on screen. -->
-<style>html, body { overflow-x: clip; }</style>
+<style>
+html, body { overflow-x: clip; }
+/* phones: the site's section headings (23px) were barely bigger than the
+   bold numbered sub-heads (22px body text); make the headings clearly larger */
+@media (max-width: 767px) {
+  .story-section h2.section-heading { font-size: 29px; line-height: 1.3; }
+}
+</style>
 
 <!-- THE INTERACTIVES -->
 <link rel="stylesheet" href="./interactives.css?v=bba2f30b">
