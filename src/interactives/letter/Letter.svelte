@@ -437,9 +437,9 @@
 		line-height: 1.7;
 		color: var(--wi-body);
 	}
+	/* quotes: indented, no bar */
 	.voice {
-		border-left: 2px solid var(--wi-line);
-		padding-left: 12px;
+		padding-left: 14px;
 		font-size: 15px;
 		line-height: 1.6;
 	}
@@ -448,9 +448,6 @@
 		font-size: 12.5px;
 		color: var(--wi-muted);
 		font-weight: 600;
-	}
-	.voice.red {
-		border-color: var(--wi-red);
 	}
 	.trio {
 		display: flex;
