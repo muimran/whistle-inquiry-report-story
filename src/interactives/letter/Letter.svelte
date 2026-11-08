@@ -191,7 +191,7 @@
 	{/each}
 	<div class="ledger">
 		<div class="ledger-h">{C.ui.sheetTitle}</div>
-		<div class="ledger-row"><span>{s.row[0]}</span><span>{s.row[1]}</span></div>
+		<div class="ledger-row"><span>{s.row[1]}</span></div>
 		<div class="ledger-rec" class:y={s.rec === true}>
 			{s.rec === true ? '✓ ' : '✕ '}{s.recTxt}
 		</div>
@@ -269,7 +269,6 @@
 								onclick={() => openStep(i)}
 								onkeydown={(e) => rowKey(e, i)}
 							>
-								<td>{s.row[0]}</td>
 								<td>{s.row[1]}</td>
 								<td class="rec"><span class={s.rec === true ? 'y' : 'n'}>{s.rec === true ? '✓ ' : '✕ '}{s.recTxt}</span></td>
 								<td class="go" aria-hidden="true">›</td>
